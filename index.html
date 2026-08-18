@@ -153,16 +153,42 @@
   /* ---------- Piano roll editor ---------- */
   .roll-editor{ display:none; }
   .roll-editor.open{ display:block; }
-  .roll-scroll{ max-height:440px; overflow-y:auto; overflow-x:auto; border:1px solid var(--line); border-radius:8px; padding:6px; background: var(--bg-panel-2); }
-  .roll-row{ display:flex; gap:5px; align-items:center; padding:1px 0; }
-  .roll-note{ font-size:10px; color:var(--text-dim); text-align:right; width:38px; flex-shrink:0; }
-  .roll-note.c-note{ color: var(--amber); font-weight:700; }
-  .cell{ width:20px; height:17px; border-radius:4px; background: var(--step-off); cursor:pointer; flex-shrink:0; }
+  .roll-scroll{
+    max-height:460px; overflow-y:auto; overflow-x:auto; border:1px solid var(--line); border-radius:8px;
+    background: #17140f;
+  }
+  .roll-inner{ display:inline-block; min-width:100%; }
+
+  /* Sticky bar/beat ruler along the top, scrolls horizontally with the grid */
+  .roll-ruler{
+    display:flex; position:sticky; top:0; z-index:6; background:#1d1812; border-bottom:1px solid var(--line);
+  }
+  .roll-ruler-spacer{ width:52px; flex-shrink:0; position:sticky; left:0; z-index:7; background:#1d1812; border-right:1px solid var(--line); }
+  .roll-ruler-cell{
+    width:20px; flex-shrink:0; text-align:center; font-size:9px; color:var(--text-dim); padding-top:5px; box-sizing:border-box;
+    border-left:1px solid transparent;
+  }
+  .roll-ruler-cell.barstart{ border-left:1px solid #3a332d; color:var(--amber); font-weight:700; font-size:10px; }
+
+  .roll-row{ display:flex; align-items:stretch; }
+  .roll-row.black-row .cell{ background:#221d18; }
+  .roll-row.black-row .cell.beat3{ background:#28221b; }
+
+  /* Piano key strip — mimics a real keyboard laid on its side, sticky while scrolling sideways */
+  .roll-key{
+    width:52px; flex-shrink:0; position:sticky; left:0; z-index:5;
+    display:flex; align-items:center; justify-content:flex-end; padding-right:6px;
+    font-size:9px; box-sizing:border-box; border-bottom:1px solid rgba(0,0,0,.35);
+    border-right:1px solid var(--line);
+  }
+  .roll-key.white-k{ background:#e9e2d8; color:#8a8072; }
+  .roll-key.black-k{ background:#221d19; color:#8a8072; }
+  .roll-key.c-note{ background: var(--amber); color:#1a1300; font-weight:700; }
+
+  .cell{ width:20px; height:18px; border-radius:3px; background: var(--step-off); cursor:pointer; flex-shrink:0; margin:1px 0 0 0; }
   .cell.beat3{ background: var(--step-off-hi); }
   .cell.barstart{ border-left:1px solid #3a332d; }
-  .cell.active{ background: var(--teal); box-shadow: 0 0 8px rgba(45,212,191,.35); }
-  .cell.black-key{ background: #201c1a; }
-  .cell.black-key.active{ background: var(--teal); }
+  .cell.active{ background: var(--teal); box-shadow: 0 0 6px rgba(45,212,191,.4); border:1px solid #0a6b60; border-radius:4px; }
   .roll-editor-close{ float:right; }
 
   .mixer-grid{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
@@ -878,15 +904,35 @@
   function buildRollEditor(track){
     const wrap = document.getElementById('pianoRoll');
     wrap.innerHTML = '';
+    const inner = document.createElement('div'); inner.className = 'roll-inner';
+
+    // Sticky ruler: bar numbers along the top, like a timeline
+    const ruler = document.createElement('div'); ruler.className = 'roll-ruler';
+    const spacer = document.createElement('div'); spacer.className = 'roll-ruler-spacer';
+    ruler.appendChild(spacer);
+    for(let i=0;i<totalSteps;i++){
+      const rc = document.createElement('div');
+      const isBarStart = i % STEP_PER_BAR === 0;
+      rc.className = 'roll-ruler-cell' + (isBarStart ? ' barstart' : '');
+      rc.textContent = isBarStart ? String(Math.floor(i/STEP_PER_BAR)+1) : '';
+      ruler.appendChild(rc);
+    }
+    inner.appendChild(ruler);
+
+    // Note rows, each with a real piano key on the left
     NOTE_RANGE.forEach((note, ni)=>{
-      const row = document.createElement('div'); row.className='roll-row';
-      const isC = note.startsWith('C') && !note.startsWith('C#');
-      const label = document.createElement('div'); label.className='roll-note mono' + (isC?' c-note':''); label.textContent = note;
-      row.appendChild(label);
       const isBlack = note.includes('#');
+      const isC = note.startsWith('C') && !isBlack;
+      const row = document.createElement('div'); row.className='roll-row' + (isBlack ? ' black-row' : '');
+
+      const key = document.createElement('div');
+      key.className = 'roll-key mono ' + (isC ? 'c-note' : (isBlack ? 'black-k' : 'white-k'));
+      key.textContent = isC ? note : (isBlack ? '' : note.replace(/[0-9]+$/,''));
+      row.appendChild(key);
+
       for(let i=0;i<totalSteps;i++){
         const cell = document.createElement('div');
-        cell.className = 'cell' + (isBlack?' black-key':'') + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
+        cell.className = 'cell' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
         cell.dataset.step = i; cell.dataset.note = ni;
         if(track.pattern[i]===ni) cell.classList.add('active');
         cell.onclick = ()=>{
@@ -898,17 +944,18 @@
             const inst = INSTRUMENTS_BY_ID[track.instId];
             playMelodicInstrument(audioCtx.currentTime+0.02, noteFreq(note), inst, track.vol);
           }
-          const overviewStep = document.querySelector(`.track-grid .step[data-step="${i}"]`);
           buildTrackList();
         };
         row.appendChild(cell);
       }
-      wrap.appendChild(row);
+      inner.appendChild(row);
     });
+
+    wrap.appendChild(inner);
     // scroll roughly to the middle (around C4) by default
     const scrollEl = document.getElementById('rollScroll');
     const middleIndex = NOTE_RANGE.indexOf('C4');
-    if(middleIndex>=0){ scrollEl.scrollTop = Math.max(0, middleIndex*19 - 150); }
+    if(middleIndex>=0){ scrollEl.scrollTop = Math.max(0, middleIndex*19 - 160); }
   }
   function scrollRollToStep(step){
     const scrollEl = document.getElementById('rollScroll');
