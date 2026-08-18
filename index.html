@@ -8,6 +8,7 @@
     --bg: #131110;
     --bg-panel: #1b1816;
     --bg-panel-2: #201c1a;
+    --bg-panel-3: #262019;
     --line: #322c28;
     --text: #e9e2d8;
     --text-dim: #8c8178;
@@ -27,14 +28,14 @@
     -webkit-font-smoothing: antialiased;
   }
   .mono{ font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
-  .app{ max-width: 1220px; margin: 0 auto; padding: 18px 18px 40px; }
+  .app{ max-width: 1320px; margin: 0 auto; padding: 18px 18px 40px; }
 
   header{
     display:flex; align-items:center; justify-content:space-between;
     padding: 10px 18px; background: var(--bg-panel);
     border: 1px solid var(--line); border-radius: 10px;
     margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
-    position: sticky; top: 8px; z-index: 20;
+    position: sticky; top: 8px; z-index: 30;
   }
   .brand{ display:flex; align-items:baseline; gap:10px; }
   .brand .mark{ font-family: 'SFMono-Regular', Consolas, monospace; font-weight:700; font-size: 20px; letter-spacing:1px; color:var(--amber); }
@@ -50,13 +51,20 @@
   .field{ display:flex; flex-direction:column; gap:2px; }
   .field label{ font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
   .field input[type=number]{
-    width:60px; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    width:56px; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
     border-radius:6px; padding:6px 8px; font-family: inherit;
   }
   input[type=range]{ accent-color: var(--amber); }
-  .step-indicator{ display:flex; gap:3px; margin-left:6px; }
+  .step-indicator{ display:flex; gap:2px; margin-left:6px; max-width:160px; flex-wrap:wrap; }
   .step-indicator span{ width:6px; height:6px; border-radius:50%; background: var(--step-off); }
   .step-indicator span.on{ background: var(--amber); }
+  .bars-ctrl{ display:flex; align-items:center; gap:4px; }
+  .bars-ctrl button{
+    width:26px; height:26px; border-radius:6px; border:1px solid var(--line); background:var(--bg-panel-2);
+    color:var(--text); cursor:pointer; font-size:14px; line-height:1;
+  }
+  .bars-ctrl button:hover{ border-color:var(--amber); }
+  .bars-ctrl .bars-val{ font-size:12px; color:var(--text-dim); min-width:64px; text-align:center; }
 
   .panel{
     background: var(--bg-panel); border:1px solid var(--line); border-radius:10px;
@@ -68,45 +76,94 @@
   .panel-title.teal .accent{ color: var(--teal); }
   .panel-title.violet .accent{ color: var(--violet); }
   .panel-title.rose .accent{ color: var(--rose); }
-  .group-label{ font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin: 10px 0 4px 2px; }
-  .group-label:first-child{ margin-top:0; }
 
-  .seq-scroll{ overflow-x:auto; }
+  button.action{
+    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    padding:8px 14px; border-radius:7px; font-size:12.5px; cursor:pointer; transition: border-color .12s;
+  }
+  button.action:hover{ border-color: var(--amber); }
+  button.action.primary{ background: var(--amber); color:#1a1300; border-color:var(--amber); font-weight:600; }
+  button.action.save{ background: var(--teal); color:#032b26; border-color:var(--teal); font-weight:600; }
+  button.action.import{ background: var(--rose); color:#320019; border-color:var(--rose); font-weight:600; }
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .status{ font-size:11px; color:var(--text-dim); margin-top:8px; min-height:14px; }
+
+  /* ---------- Track list / sequencer ---------- */
+  .seq-scroll{ overflow-x:auto; padding-bottom:4px; }
+  .seq-header-row{ display:flex; gap:5px; margin-bottom:6px; align-items:center; }
+  .seq-header-fixed{ display:flex; gap:6px; flex-shrink:0; }
+  .seq-header-grid{ display:flex; gap:5px; }
+  .seq-header-grid .num{ width:22px; text-align:center; font-size:9.5px; color:var(--text-dim); flex-shrink:0; }
+  .seq-header-grid .num.beat{ color: var(--amber); font-weight:700; }
+  .seq-header-grid .num.barstart{ border-left:1px solid var(--line); padding-left:2px; }
+
   .track-row{
-    display:grid; grid-template-columns: 118px 46px repeat(16, minmax(22px,1fr));
-    gap:5px; align-items:center; padding:3px 0; min-width: 640px;
+    display:flex; gap:6px; align-items:center; padding:4px 0;
   }
   .track-row + .track-row{ border-top: 1px solid #221f1c; }
+  .track-fixed{ display:flex; align-items:center; gap:6px; width:266px; flex-shrink:0; }
+  .track-name-wrap{ width:150px; overflow:hidden; }
   .track-name{ font-size:12px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .track-controls{ display:flex; gap:3px; }
+  .track-inst{ font-size:9.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-controls{ display:flex; gap:3px; align-items:center; }
   .mini-btn{
     width:19px; height:19px; border-radius:4px; border:1px solid var(--line);
     background: transparent; color:var(--text-dim); font-size:9.5px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-weight:700;
+    display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;
   }
+  .mini-btn:hover{ border-color:var(--amber); }
   .mini-btn.mute.active{ background: var(--red); color:#2a0000; border-color:var(--red); }
   .mini-btn.solo.active{ background: var(--teal); color:#032b26; border-color:var(--teal); }
+  .mini-btn.edit.active{ background: var(--violet); color:#1b0a33; border-color:var(--violet); }
+  .mini-btn.del{ color: var(--red); }
+  .track-vol{ width:44px; }
+  .track-grid{ display:flex; gap:5px; }
   .step{
-    height:24px; border-radius:5px; background: var(--step-off); border:1px solid transparent;
-    cursor:pointer; transition: background .06s, transform .06s;
+    width:22px; height:24px; border-radius:5px; background: var(--step-off); border:1px solid transparent;
+    cursor:pointer; transition: background .06s, transform .06s; flex-shrink:0;
   }
   .step.beat3{ background: var(--step-off-hi); }
+  .step.barstart{ border-left:1px solid #3a332d; }
   .step.active{ background: var(--amber); box-shadow: 0 0 8px rgba(255,176,32,.35); }
   .step.playhead{ border-color: rgba(255,255,255,.5); }
   .step:hover{ transform: scale(0.93); }
-  .seq-header{ display:grid; grid-template-columns: 118px 46px repeat(16, minmax(22px,1fr)); gap:5px; margin-bottom:4px; min-width: 640px; }
-  .seq-header .num{ text-align:center; font-size:10px; color:var(--text-dim); }
-  .seq-header .num.beat{ color: var(--amber); font-weight:700; }
+  .step.melodic-block{ background: var(--step-off); }
+  .step.melodic-block.active{ background: var(--violet); box-shadow: 0 0 8px rgba(185,142,255,.35); }
 
-  .roll-row{ display:grid; grid-template-columns: 54px repeat(16, minmax(20px,1fr)); gap:5px; align-items:center; padding:2px 0; min-width: 560px; }
-  .roll-note{ font-size:10.5px; color:var(--text-dim); text-align:right; padding-right:6px; }
-  .cell{ height:19px; border-radius:4px; background: var(--step-off); cursor:pointer; }
+  .empty-tracks{ color:var(--text-dim); font-size:12.5px; padding:10px 2px; }
+
+  /* ---------- Instrument picker ---------- */
+  .inst-picker{ display:none; margin-top:10px; border-top:1px solid var(--line); padding-top:10px; }
+  .inst-picker.open{ display:block; }
+  .inst-search{
+    width:100%; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:7px; padding:8px 10px; font-family:inherit; font-size:12.5px; margin-bottom:10px;
+  }
+  .inst-cat{ margin-bottom:10px; }
+  .inst-cat-title{ font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--amber); margin-bottom:6px; }
+  .inst-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+  .inst-btn{
+    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    padding:7px 11px; border-radius:7px; font-size:11.5px; cursor:pointer; transition:border-color .1s;
+  }
+  .inst-btn:hover{ border-color: var(--teal); background: var(--bg-panel-3); }
+  .inst-btn.drum{ border-left:3px solid var(--amber); }
+  .inst-btn.melodic{ border-left:3px solid var(--teal); }
+
+  /* ---------- Piano roll editor ---------- */
+  .roll-editor{ display:none; }
+  .roll-editor.open{ display:block; }
+  .roll-scroll{ max-height:440px; overflow-y:auto; overflow-x:auto; border:1px solid var(--line); border-radius:8px; padding:6px; background: var(--bg-panel-2); }
+  .roll-row{ display:flex; gap:5px; align-items:center; padding:1px 0; }
+  .roll-note{ font-size:10px; color:var(--text-dim); text-align:right; width:38px; flex-shrink:0; }
+  .roll-note.c-note{ color: var(--amber); font-weight:700; }
+  .cell{ width:20px; height:17px; border-radius:4px; background: var(--step-off); cursor:pointer; flex-shrink:0; }
   .cell.beat3{ background: var(--step-off-hi); }
+  .cell.barstart{ border-left:1px solid #3a332d; }
   .cell.active{ background: var(--teal); box-shadow: 0 0 8px rgba(45,212,191,.35); }
   .cell.black-key{ background: #201c1a; }
   .cell.black-key.active{ background: var(--teal); }
-  .bass-roll .cell.active{ background: var(--violet); box-shadow: 0 0 8px rgba(185,142,255,.35); }
-  .strings-roll .cell.active{ background: var(--rose); box-shadow: 0 0 8px rgba(255,143,191,.35); }
+  .roll-editor-close{ float:right; }
 
   .mixer-grid{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
   .strip{
@@ -117,17 +174,6 @@
   .strip input[type=range]{ writing-mode: vertical-lr; direction: rtl; width:18px; height:80px; }
   .strip .val{ font-size:9.5px; color: var(--text); }
 
-  .actions{ display:flex; gap:8px; flex-wrap:wrap; }
-  button.action{
-    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
-    padding:8px 14px; border-radius:7px; font-size:12.5px; cursor:pointer; transition: border-color .12s;
-  }
-  button.action:hover{ border-color: var(--amber); }
-  button.action.primary{ background: var(--amber); color:#1a1300; border-color:var(--amber); font-weight:600; }
-  button.action.save{ background: var(--teal); color:#032b26; border-color:var(--teal); font-weight:600; }
-  button.action.import{ background: var(--rose); color:#320019; border-color:var(--rose); font-weight:600; }
-  .status{ font-size:11px; color:var(--text-dim); margin-top:8px; min-height:14px; }
-
   select{
     background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
     border-radius:6px; padding:6px 8px; font-family:inherit; font-size:12px;
@@ -135,7 +181,7 @@
 
   /* ---------- Piano ---------- */
   .piano-wrap{ overflow-x:auto; padding: 6px 0 2px; }
-  .piano{ position:relative; height:120px; width: 1000px; }
+  .piano{ position:relative; height:120px; }
   .white-key{
     position:absolute; top:0; width:38px; height:120px; background:#efe7da; border:1px solid #14110f;
     border-radius:0 0 5px 5px; cursor:pointer; display:flex; align-items:flex-end; justify-content:center;
@@ -151,6 +197,11 @@
   .black-key-piano:hover{ background:#2a2420; }
   .black-key-piano.active{ background: var(--amber); }
   .piano-hint{ font-size:10.5px; color:var(--text-dim); margin-top:6px; }
+  .piano-toolbar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .oct-ctrl{ display:flex; align-items:center; gap:4px; }
+  .oct-ctrl button{ width:24px; height:24px; border-radius:6px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); cursor:pointer; }
+  .oct-ctrl button:hover{ border-color:var(--amber); }
+  .oct-val{ font-size:11px; color:var(--text-dim); min-width:70px; text-align:center; }
 </style>
 </head>
 <body>
@@ -165,64 +216,67 @@
       <button class="transport-btn" id="playBtn" title="Play/Stop">▶</button>
       <div class="field"><label>BPM</label><input type="number" id="bpmInput" value="120" min="40" max="220"></div>
       <div class="field"><label>Master</label><input type="range" id="masterVol" min="0" max="100" value="80" style="width:90px;"></div>
+      <div class="field">
+        <label>Bars</label>
+        <div class="bars-ctrl">
+          <button id="barMinus">−</button>
+          <span class="bars-val mono" id="barsVal">4 bars</span>
+          <button id="barPlus">+</button>
+        </div>
+      </div>
       <div class="step-indicator" id="stepIndicator"></div>
     </div>
   </header>
 
   <div class="panel">
     <div class="panel-title">
-      <h2><span class="accent">Step</span> Sequencer — 17 instruments</h2>
-      <span class="status mono" style="margin:0;">16 steps · 1 bar</span>
+      <h2><span class="accent">Track</span> Sequencer — <span id="instCountLabel">0</span> instruments available</h2>
+      <div class="actions">
+        <button class="action primary" id="addTrackBtn">+ Add Track</button>
+      </div>
     </div>
+
+    <div class="inst-picker" id="instPicker">
+      <input type="text" class="inst-search" id="instSearch" placeholder="Search instruments…">
+      <div id="instCatWrap"></div>
+    </div>
+
     <div class="seq-scroll">
-      <div class="seq-header" id="seqHeader"></div>
-      <div class="group-label">Kick / Snare / Clap</div>
-      <div id="tracksKick"></div>
-      <div class="group-label">Hats / Cymbals / Shaker</div>
-      <div id="tracksHats"></div>
-      <div class="group-label">Toms / Congas / Perc</div>
-      <div id="tracksPerc"></div>
+      <div class="seq-header-row">
+        <div class="seq-header-fixed" style="width:266px;"></div>
+        <div class="seq-header-grid" id="seqHeader"></div>
+      </div>
+      <div id="trackList"></div>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-title teal">
-      <h2><span class="accent">Lead</span> Piano Roll</h2>
-      <span class="status mono" style="margin:0;">sawtooth synth</span>
-    </div>
-    <div class="seq-scroll"><div id="pianoRoll"></div></div>
-  </div>
-
-  <div class="panel">
+  <div class="panel roll-editor" id="rollEditorPanel">
     <div class="panel-title violet">
-      <h2><span class="accent">Bass</span> Line</h2>
-      <span class="status mono" style="margin:0;">sub synth</span>
+      <h2><span class="accent">Piano Roll</span> — <span id="rollTrackName">—</span></h2>
+      <button class="action" id="closeRollBtn">Close</button>
     </div>
-    <div class="seq-scroll"><div id="bassRoll" class="bass-roll"></div></div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title rose">
-      <h2><span class="accent">Strings</span> Pad</h2>
-      <span class="status mono" style="margin:0;">detuned string ensemble</span>
+    <div class="roll-scroll" id="rollScroll">
+      <div id="pianoRoll"></div>
     </div>
-    <div class="seq-scroll"><div id="stringsRoll" class="strings-roll"></div></div>
   </div>
 
   <div class="panel">
     <div class="panel-title">
       <h2>Play — Virtual Piano</h2>
-      <div class="field">
-        <label>Instrument</label>
-        <select id="pianoInstrument">
-          <option value="lead">Lead</option>
-          <option value="bass">Bass</option>
-          <option value="strings">Strings</option>
-        </select>
+      <div class="piano-toolbar">
+        <div class="field">
+          <label>Instrument</label>
+          <select id="pianoInstrument"></select>
+        </div>
+        <div class="oct-ctrl">
+          <button id="octDown">−</button>
+          <span class="oct-val mono" id="octVal">Octave 3</span>
+          <button id="octUp">+</button>
+        </div>
       </div>
     </div>
     <div class="piano-wrap"><div class="piano" id="piano"></div></div>
-    <div class="piano-hint">Click keys to play, or use your computer keyboard: <span class="mono">A W S E D F T G Y H U J K O L P</span></div>
+    <div class="piano-hint">Click keys to play, or use your computer keyboard: <span class="mono">A W S E D F T G Y H U J K O L P</span> — use <span class="mono">Z / X</span> to shift octaves.</div>
   </div>
 
   <div class="panel">
@@ -246,62 +300,226 @@
   </div>
 
 </div>
-
 <script>
 (function(){
-  const STEPS = 16;
-  const TRACKS = [
-    { id:'kick',  name:'Kick',        type:'kick',  vol:0.9,  group:'tracksKick' },
-    { id:'sub',   name:'Sub Kick',    type:'sub',   vol:0.7,  group:'tracksKick' },
-    { id:'snare', name:'Snare',       type:'snare', vol:0.8,  group:'tracksKick' },
-    { id:'rim',   name:'Rimshot',     type:'rim',   vol:0.6,  group:'tracksKick' },
-    { id:'clap',  name:'Clap',        type:'clap',  vol:0.7,  group:'tracksKick' },
-    { id:'chat',  name:'Hat Closed',  type:'hatC',  vol:0.6,  group:'tracksHats' },
-    { id:'ohat',  name:'Hat Open',    type:'hatO',  vol:0.5,  group:'tracksHats' },
-    { id:'shake', name:'Shaker',      type:'shake', vol:0.5,  group:'tracksHats' },
-    { id:'ride',  name:'Ride',        type:'ride',  vol:0.45, group:'tracksHats' },
-    { id:'crash', name:'Crash',       type:'crash', vol:0.55, group:'tracksHats' },
-    { id:'tomL',  name:'Tom Low',     type:'tom',   vol:0.7, pitch:110, group:'tracksPerc' },
-    { id:'tomM',  name:'Tom Mid',     type:'tom',   vol:0.7, pitch:150, group:'tracksPerc' },
-    { id:'tomH',  name:'Tom High',    type:'tom',   vol:0.7, pitch:200, group:'tracksPerc' },
-    { id:'congaL',name:'Conga Low',   type:'conga', vol:0.6, pitch:220, group:'tracksPerc' },
-    { id:'congaH',name:'Conga High',  type:'conga', vol:0.6, pitch:320, group:'tracksPerc' },
-    { id:'cowbell',name:'Cowbell',    type:'cowbell', vol:0.5, group:'tracksPerc' },
-    { id:'perc',  name:'Click Perc',  type:'perc',  vol:0.6, group:'tracksPerc' },
+  "use strict";
+  const STEP_PER_BAR = 16;
+  let bars = 4;
+  let totalSteps = bars * STEP_PER_BAR;
+
+  // ============================================================
+  // Instrument library — all synthesized (no external samples)
+  // ============================================================
+  const DRUM_INSTRUMENTS = [
+    // Kicks
+    {id:'kick808', name:'808 Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:150, freqEnd:40, decay:0.30, vol:0.9},
+    {id:'kickAcoustic', name:'Acoustic Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:120, freqEnd:55, decay:0.22, vol:0.85},
+    {id:'kickSub', name:'Sub Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:70, freqEnd:30, decay:0.5, vol:0.75},
+    {id:'kickPunchy', name:'Punchy Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'triangle', freq:180, freqEnd:50, decay:0.18, vol:0.9},
+    {id:'kickLofi', name:'Lo-Fi Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:100, freqEnd:45, decay:0.35, vol:0.7},
+    {id:'kickTrap', name:'Trap Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:160, freqEnd:35, decay:0.45, vol:0.85},
+    {id:'kickHouse', name:'House Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:140, freqEnd:48, decay:0.28, vol:0.9},
+    {id:'kickTechno', name:'Techno Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'square', freq:130, freqEnd:42, decay:0.25, vol:0.85},
+
+    // Snares & Claps
+    {id:'snareAcoustic', name:'Acoustic Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:180, toneDecay:0.12, noiseFreq:1000, noiseDecay:0.18, vol:0.8},
+    {id:'snareRim', name:'Rimshot', cat:'Snares & Claps', kind:'drum', engine:'click', freq:1400, decay:0.05, wave:'square', vol:0.6},
+    {id:'snareLofi', name:'Lo-Fi Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:150, toneDecay:0.1, noiseFreq:800, noiseDecay:0.15, vol:0.7},
+    {id:'snareTrap', name:'Trap Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:200, toneDecay:0.14, noiseFreq:1200, noiseDecay:0.22, vol:0.8},
+    {id:'snareBrush', name:'Brush Snare', cat:'Snares & Claps', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:2000, q:0.8, decay:0.3, vol:0.5},
+    {id:'snarePiccolo', name:'Piccolo Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:260, toneDecay:0.08, noiseFreq:1600, noiseDecay:0.12, vol:0.75},
+    {id:'clap', name:'Clap', cat:'Snares & Claps', kind:'drum', engine:'clap', repeats:3, spacing:0.012, filterFreq:1200, decay:0.08, vol:0.7},
+    {id:'clapAnalog', name:'Analog Clap', cat:'Snares & Claps', kind:'drum', engine:'clap', repeats:4, spacing:0.01, filterFreq:1500, decay:0.1, vol:0.7},
+    {id:'clapWide', name:'Wide Clap', cat:'Snares & Claps', kind:'drum', engine:'clap', repeats:5, spacing:0.014, filterFreq:1000, decay:0.14, vol:0.65},
+
+    // Hats & Cymbals
+    {id:'hatClosed', name:'Hat Closed', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:7000, q:0.5, decay:0.06, vol:0.6},
+    {id:'hatOpen', name:'Hat Open', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:7000, q:0.5, decay:0.3, vol:0.5},
+    {id:'hatPedal', name:'Hat Pedal', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:6000, q:0.4, decay:0.1, vol:0.45},
+    {id:'hatTrapTight', name:'Trap Hat Tight', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:8500, q:0.6, decay:0.04, vol:0.55},
+    {id:'hatTrapLoose', name:'Trap Hat Loose', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:7500, q:0.5, decay:0.16, vol:0.5},
+    {id:'ride', name:'Ride', cat:'Hats & Cymbals', kind:'drum', engine:'metallic', freqs:[2500,3800,5200], wave:'square', decay:0.5, mix:0.12, noiseFreq:5000, vol:0.45},
+    {id:'crash', name:'Crash', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:4000, q:0.4, decay:1.1, vol:0.55},
+    {id:'chinaCymbal', name:'China Cymbal', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:3500, q:0.9, decay:0.8, vol:0.5},
+    {id:'splash', name:'Splash', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:5500, q:0.5, decay:0.45, vol:0.45},
+
+    // Toms & Drums
+    {id:'tomLow', name:'Tom Low', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:110, freqEnd:66, decay:0.28, vol:0.7},
+    {id:'tomMid', name:'Tom Mid', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:150, freqEnd:90, decay:0.26, vol:0.7},
+    {id:'tomHigh', name:'Tom High', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:200, freqEnd:120, decay:0.24, vol:0.7},
+    {id:'floorTom', name:'Floor Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:85, freqEnd:50, decay:0.35, vol:0.75},
+
+    // World Percussion
+    {id:'congaLow', name:'Conga Low', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:220, freqEnd:165, decay:0.14, vol:0.6},
+    {id:'congaHigh', name:'Conga High', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:320, freqEnd:240, decay:0.12, vol:0.6},
+    {id:'bongoLow', name:'Bongo Low', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:280, freqEnd:210, decay:0.1, vol:0.55},
+    {id:'bongoHigh', name:'Bongo High', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:400, freqEnd:300, decay:0.09, vol:0.55},
+    {id:'timbale', name:'Timbale', cat:'World Percussion', kind:'drum', engine:'tone', wave:'triangle', freq:500, freqEnd:350, decay:0.12, vol:0.55},
+    {id:'guiro', name:'Guiro', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:3000, q:1.2, decay:0.18, vol:0.45},
+    {id:'claves', name:'Claves', cat:'World Percussion', kind:'drum', engine:'click', freq:2500, decay:0.06, wave:'sine', vol:0.5},
+    {id:'cabasa', name:'Cabasa', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:5500, q:0.7, decay:0.1, vol:0.45},
+    {id:'tambourine', name:'Tambourine', cat:'World Percussion', kind:'drum', engine:'metallic', freqs:[4200,5600,7200], wave:'square', decay:0.2, mix:0.08, vol:0.45},
+    {id:'cowbell', name:'Cowbell', cat:'World Percussion', kind:'drum', engine:'metallic', freqs:[800,540], wave:'square', decay:0.25, mix:0.5, vol:0.5},
+    {id:'triangleInst', name:'Triangle', cat:'World Percussion', kind:'drum', engine:'metallic', freqs:[3000,4500], wave:'sine', decay:0.6, mix:0.3, vol:0.4},
+    {id:'woodblock', name:'Woodblock', cat:'World Percussion', kind:'drum', engine:'click', freq:1200, decay:0.06, wave:'square', vol:0.55},
+    {id:'agogoLow', name:'Agogo Low', cat:'World Percussion', kind:'drum', engine:'tone', wave:'square', freq:600, freqEnd:550, decay:0.15, vol:0.5},
+    {id:'agogoHigh', name:'Agogo High', cat:'World Percussion', kind:'drum', engine:'tone', wave:'square', freq:900, freqEnd:820, decay:0.13, vol:0.5},
+    {id:'vibraslap', name:'Vibraslap', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:1800, q:1.5, decay:0.4, vol:0.45},
+    {id:'djembe', name:'Djembe', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:180, freqEnd:100, decay:0.2, vol:0.7},
+
+    // Electronic Percussion
+    {id:'clickPerc', name:'Click Perc', cat:'Electronic Percussion', kind:'drum', engine:'click', freq:900, decay:0.07, wave:'square', vol:0.6},
+    {id:'zapPerc', name:'Zap Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sawtooth', freq:1800, freqEnd:200, decay:0.1, vol:0.5},
+    {id:'blipPerc', name:'Blip', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:1200, freqEnd:900, decay:0.04, vol:0.5},
+    {id:'laserPerc', name:'Laser Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sawtooth', freq:2500, freqEnd:100, decay:0.15, vol:0.45},
+    {id:'noisePerc', name:'Noise Perc', cat:'Electronic Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:2500, q:1, decay:0.09, vol:0.5},
+    {id:'metalPerc', name:'Metal Perc', cat:'Electronic Percussion', kind:'drum', engine:'metallic', freqs:[1900,2600,3300], wave:'square', decay:0.3, mix:0.15, vol:0.4},
+    {id:'glitchPerc', name:'Glitch Perc', cat:'Electronic Percussion', kind:'drum', engine:'click', freq:3200, decay:0.03, wave:'square', vol:0.5},
+    {id:'fmPerc', name:'FM Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sine', freq:600, freqEnd:1200, decay:0.08, vol:0.5},
   ];
-  const NOTES = ['C5','B4','A4','G4','F4','E4','D4','C4','B3','A3','G3','F3'];
-  const BASS_NOTES = ['C3','B2','A2','G2','F2','E2','D2','C2'];
-  const STRING_NOTES = NOTES;
 
-  // ---------- State ----------
-  let patterns = {};
-  TRACKS.forEach(t => patterns[t.id] = new Array(STEPS).fill(false));
-  let rollState = new Array(STEPS).fill(null);
-  let bassState = new Array(STEPS).fill(null);
-  let stringState = new Array(STEPS).fill(null);
-  let mute = {}; let solo = {};
-  TRACKS.forEach(t => { mute[t.id]=false; solo[t.id]=false; });
-  let volumes = {}; TRACKS.forEach(t => volumes[t.id] = t.vol);
-  let leadVol = 0.6, bassVol = 0.65, stringsVol = 0.45;
+  const MELODIC_INSTRUMENTS = [
+    // Keys
+    {id:'grandPiano', name:'Grand Piano', cat:'Keys', kind:'melodic', wave:'triangle', unison:[0], sub:0.5, subMix:0.25, filterType:'lowpass', filterFreq:3200, attack:0.005, durBeats:1.1, vol:0.6},
+    {id:'brightPiano', name:'Bright Piano', cat:'Keys', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.15, filterType:'lowpass', filterFreq:4200, attack:0.004, durBeats:1.0, vol:0.55},
+    {id:'epiano1', name:'Electric Piano 1', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,5], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:2600, attack:0.006, durBeats:1.3, vol:0.55},
+    {id:'epiano2', name:'Electric Piano 2', cat:'Keys', kind:'melodic', wave:'triangle', unison:[0,-6], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:2200, attack:0.01, durBeats:1.4, vol:0.55},
+    {id:'clavinet', name:'Clavinet', cat:'Keys', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'bandpass', filterFreq:1800, filterQ:2, attack:0.002, durBeats:0.5, vol:0.5},
+    {id:'harpsichord', name:'Harpsichord', cat:'Keys', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'highpass', filterFreq:600, attack:0.001, durBeats:0.6, vol:0.45},
+    {id:'organDrawbar', name:'Organ Drawbar', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,7,12], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:5000, attack:0.01, durBeats:1.6, vol:0.5},
+    {id:'organChurch', name:'Organ Church', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,12,19], sub:0.5, subMix:0.35, filterType:'lowpass', filterFreq:4500, attack:0.03, durBeats:2.2, vol:0.5},
+    {id:'celesta', name:'Celesta', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,12], sub:0, filterType:'lowpass', filterFreq:6000, attack:0.002, pluck:true, decayTime:1.0, vol:0.5},
+    {id:'musicBox', name:'Music Box', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,19], sub:0, filterType:'lowpass', filterFreq:7000, attack:0.001, pluck:true, decayTime:1.3, vol:0.45},
 
+    // Bass
+    {id:'subBass', name:'Sub Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0], sub:0.5, subMix:0.6, filterType:'lowpass', filterFreq:500, attack:0.01, durBeats:0.95, vol:0.65},
+    {id:'synthBass', name:'Synth Bass', cat:'Bass', kind:'melodic', wave:'triangle', unison:[0], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:900, attack:0.012, durBeats:0.95, vol:0.6},
+    {id:'acidBass303', name:'Acid Bass 303', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'lowpass', filterFreq:1100, filterQ:8, attack:0.002, durBeats:0.7, vol:0.55},
+    {id:'fmBass', name:'FM Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0,2], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:700, attack:0.005, durBeats:0.85, vol:0.55},
+    {id:'reeseBass', name:'Reese Bass', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[-12,12], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:600, attack:0.02, durBeats:1.1, vol:0.5},
+    {id:'slapBass', name:'Slap Bass', cat:'Bass', kind:'melodic', wave:'square', unison:[0], sub:0.5, subMix:0.25, filterType:'bandpass', filterFreq:1200, filterQ:2, attack:0.001, durBeats:0.55, vol:0.55},
+    {id:'fretlessBass', name:'Fretless Bass', cat:'Bass', kind:'melodic', wave:'triangle', unison:[0,-7], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:1000, attack:0.02, durBeats:1.0, vibratoRate:5, vibratoDepth:4, vol:0.55},
+    {id:'deepBass', name:'Deep Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0], sub:0.25, subMix:0.7, filterType:'lowpass', filterFreq:350, attack:0.02, durBeats:1.2, vol:0.65},
+
+    // Leads
+    {id:'sawLead', name:'Saw Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'lowpass', filterFreq:2400, attack:0.01, durBeats:0.9, vol:0.5},
+    {id:'squareLead', name:'Square Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.005, durBeats:0.85, vol:0.45},
+    {id:'pulseLead', name:'Pulse Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[7], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.005, durBeats:0.85, vol:0.45},
+    {id:'supersawLead', name:'Supersaw Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[-10,-4,0,4,10], sub:0, filterType:'lowpass', filterFreq:3200, attack:0.008, durBeats:0.95, vol:0.4},
+    {id:'fmLead', name:'FM Lead', cat:'Leads', kind:'melodic', wave:'sine', unison:[0,3,7], sub:0, filterType:'lowpass', filterFreq:3500, attack:0.004, durBeats:0.8, vol:0.5},
+    {id:'pwmLead', name:'PWM Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[0,10], sub:0, filterType:'lowpass', filterFreq:2200, attack:0.01, durBeats:0.95, vol:0.45},
+    {id:'tranceLead', name:'Trance Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[-7,0,7], sub:0, filterType:'lowpass', filterFreq:4000, attack:0.003, durBeats:0.85, vibratoRate:6, vibratoDepth:5, vol:0.45},
+    {id:'screechLead', name:'Screech Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:3000, filterQ:6, attack:0.002, durBeats:0.7, vol:0.4},
+    {id:'analogLead', name:'Analog Lead', cat:'Leads', kind:'melodic', wave:'triangle', unison:[0,-5], sub:0, filterType:'lowpass', filterFreq:2500, attack:0.015, durBeats:1.0, vol:0.5},
+
+    // Plucks
+    {id:'pluckSynth', name:'Pluck Synth', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0], sub:0, filterType:'lowpass', filterFreq:3000, attack:0.001, pluck:true, decayTime:0.4, vol:0.55},
+    {id:'musicBoxPluck', name:'Music Box Pluck', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,12], sub:0, attack:0.001, pluck:true, decayTime:0.6, vol:0.5},
+    {id:'harpPluck', name:'Harp Pluck', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,7], sub:0.5, subMix:0.15, attack:0.001, pluck:true, decayTime:0.9, vol:0.5},
+    {id:'kalimba', name:'Kalimba', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0], sub:0, attack:0.001, pluck:true, decayTime:0.5, vol:0.55},
+    {id:'marimba', name:'Marimba', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,24], sub:0, attack:0.001, pluck:true, decayTime:0.35, vol:0.55},
+    {id:'xylophone', name:'Xylophone', cat:'Plucks', kind:'melodic', wave:'square', unison:[0,24], sub:0, filterType:'lowpass', filterFreq:5000, attack:0.001, pluck:true, decayTime:0.25, vol:0.4},
+    {id:'vibraphone', name:'Vibraphone', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,12], sub:0, attack:0.002, pluck:true, decayTime:1.2, vibratoRate:4, vibratoDepth:3, vol:0.5},
+    {id:'steelDrum', name:'Steel Drum', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,7,12], sub:0, attack:0.002, pluck:true, decayTime:0.8, vol:0.5},
+    {id:'glockenspiel', name:'Glockenspiel', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,24,31], sub:0, attack:0.001, pluck:true, decayTime:0.7, vol:0.4},
+
+    // Pads & Strings
+    {id:'warmPad', name:'Warm Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-8,0,8], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:1800, attack:0.25, durBeats:2.0, vol:0.4},
+    {id:'choirPad', name:'Choir Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-5,0,5,10], sub:0, filterType:'lowpass', filterFreq:1500, attack:0.3, durBeats:2.4, vol:0.35},
+    {id:'glassPad', name:'Glass Pad', cat:'Pads & Strings', kind:'melodic', wave:'sine', unison:[0,7,12,19], sub:0, filterType:'lowpass', filterFreq:3500, attack:0.2, durBeats:2.0, vol:0.35},
+    {id:'ambientPad', name:'Ambient Pad', cat:'Pads & Strings', kind:'melodic', wave:'triangle', unison:[-12,0,12], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:1200, attack:0.4, durBeats:3.0, vol:0.35},
+    {id:'analogPad', name:'Analog Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-6,0,6], sub:0, filterType:'lowpass', filterFreq:2000, attack:0.18, durBeats:1.8, vol:0.4},
+    {id:'stringEnsemble', name:'String Ensemble', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-7,0,7], sub:0, filterType:'lowpass', filterFreq:2000, attack:0.18, durBeats:1.7, vol:0.45},
+    {id:'synthStrings', name:'Synth Strings', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-4,4], sub:0, filterType:'lowpass', filterFreq:2400, attack:0.12, durBeats:1.5, vol:0.45},
+    {id:'brassEnsemble', name:'Brass Ensemble', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[0,7], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.05, durBeats:1.1, vol:0.5},
+
+    // Wind & Brass
+    {id:'trumpetSynth', name:'Trumpet Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1800, filterQ:1.5, attack:0.04, durBeats:1.0, vol:0.5},
+    {id:'fluteSynth', name:'Flute Synth', cat:'Wind & Brass', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:3000, attack:0.06, durBeats:1.2, vibratoRate:5, vibratoDepth:3, vol:0.45},
+    {id:'saxSynth', name:'Sax Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1400, filterQ:2, attack:0.05, durBeats:1.1, vol:0.5},
+    {id:'clarinetSynth', name:'Clarinet Synth', cat:'Wind & Brass', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:2000, attack:0.04, durBeats:1.1, vol:0.4},
+    {id:'oboeSynth', name:'Oboe Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:2200, filterQ:3, attack:0.03, durBeats:1.0, vol:0.4},
+    {id:'frenchHornSynth', name:'French Horn Synth', cat:'Wind & Brass', kind:'melodic', wave:'triangle', unison:[0], sub:0.5, subMix:0.15, filterType:'lowpass', filterFreq:1600, attack:0.07, durBeats:1.4, vol:0.5},
+    {id:'tubaSynth', name:'Tuba Synth', cat:'Wind & Brass', kind:'melodic', wave:'sine', unison:[0], sub:0.5, subMix:0.5, filterType:'lowpass', filterFreq:800, attack:0.05, durBeats:1.3, vol:0.55},
+
+    // World Melodic
+    {id:'sitarSynth', name:'Sitar Synth', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0,4,7], sub:0, filterType:'bandpass', filterFreq:1600, filterQ:4, attack:0.002, pluck:true, decayTime:1.1, vol:0.45},
+    {id:'erhuSynth', name:'Erhu Synth', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1400, filterQ:2, attack:0.08, durBeats:1.3, vibratoRate:6, vibratoDepth:6, vol:0.45},
+    {id:'bagpipeDrone', name:'Bagpipe Drone', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0,7,12], sub:0, filterType:'bandpass', filterFreq:1200, filterQ:2, attack:0.02, durBeats:2.0, vol:0.4},
+    {id:'didgeridoo', name:'Didgeridoo', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.25, subMix:0.4, filterType:'lowpass', filterFreq:500, attack:0.05, durBeats:2.2, vol:0.5},
+
+    // FX & Chip
+    {id:'bellFM', name:'Bell FM', cat:'FX & Chip', kind:'melodic', wave:'sine', unison:[0,17,24], sub:0, attack:0.001, pluck:true, decayTime:1.5, vol:0.4},
+    {id:'bellTine', name:'Bell Tine', cat:'FX & Chip', kind:'melodic', wave:'sine', unison:[0,12,28], sub:0, attack:0.001, pluck:true, decayTime:1.0, vol:0.4},
+    {id:'synthVoice', name:'Synth Voice', cat:'FX & Chip', kind:'melodic', wave:'sawtooth', unison:[-3,0,3], sub:0, filterType:'bandpass', filterFreq:1500, filterQ:3, attack:0.05, durBeats:1.2, vol:0.4},
+    {id:'whistleSynth', name:'Whistle', cat:'FX & Chip', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:4000, attack:0.03, durBeats:0.9, vibratoRate:7, vibratoDepth:5, vol:0.4},
+    {id:'theremin', name:'Theremin', cat:'FX & Chip', kind:'melodic', wave:'sine', unison:[0], sub:0, attack:0.08, durBeats:1.4, vibratoRate:5, vibratoDepth:8, vol:0.45},
+    {id:'wobbleBass', name:'Wobble Bass', cat:'FX & Chip', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:800, filterQ:4, attack:0.01, durBeats:1.0, vol:0.55},
+    {id:'growlBass', name:'Growl Bass', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0,1], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:700, filterQ:3, attack:0.005, durBeats:0.9, vol:0.55},
+    {id:'chipLead8bit', name:'Chip Lead 8-bit', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0], sub:0, attack:0.001, durBeats:0.6, vol:0.4},
+    {id:'chipBass8bit', name:'Chip Bass 8-bit', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0], sub:0.5, subMix:0.3, attack:0.001, durBeats:0.6, vol:0.45},
+    {id:'chipArp8bit', name:'Chip Arp 8-bit', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0,12], sub:0, attack:0.001, durBeats:0.4, vol:0.35},
+
+    // A few extra flavors
+    {id:'padVoicesAngelic', name:'Angelic Voices', cat:'Pads & Strings', kind:'melodic', wave:'sine', unison:[-5,0,5,12], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.35, durBeats:2.6, vol:0.35},
+    {id:'leadSquareSoft', name:'Soft Square Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:1800, attack:0.03, durBeats:0.95, vol:0.4},
+    {id:'bassFMDeep', name:'Deep FM Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0,1,2], sub:0.25, subMix:0.5, filterType:'lowpass', filterFreq:450, attack:0.01, durBeats:1.0, vol:0.6},
+  ];
+
+  const INSTRUMENTS = DRUM_INSTRUMENTS.concat(MELODIC_INSTRUMENTS);
+  const INSTRUMENTS_BY_ID = {};
+  INSTRUMENTS.forEach(inst => { INSTRUMENTS_BY_ID[inst.id] = inst; });
+  const CATEGORY_ORDER = [
+    'Kicks','Snares & Claps','Hats & Cymbals','Toms & Drums','World Percussion','Electronic Percussion',
+    'Keys','Bass','Leads','Plucks','Pads & Strings','Wind & Brass','World Melodic','FX & Chip'
+  ];
+
+  // Auto-assign GM-ish MIDI note / program numbers for export
+  const DRUM_MIDI_MAP = {};
+  DRUM_INSTRUMENTS.forEach((inst, i) => { DRUM_MIDI_MAP[inst.id] = 35 + (i % 46); });
+  const CATEGORY_PROGRAM = {
+    'Keys':0, 'Bass':38, 'Leads':81, 'Plucks':45, 'Pads & Strings':89,
+    'Wind & Brass':61, 'World Melodic':104, 'FX & Chip':99
+  };
+
+  // ============================================================
+  // Note range — wide pitch range (C1 .. B7), high to low
+  // ============================================================
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  function buildNoteRange(lowOct, highOct){
+    const out = [];
+    for(let oct = highOct; oct >= lowOct; oct--){
+      for(let i = NOTE_NAMES.length - 1; i >= 0; i--){
+        out.push(NOTE_NAMES[i] + oct);
+      }
+    }
+    return out;
+  }
+  const NOTE_RANGE = buildNoteRange(1, 7); // C1 .. B7, high to low, 84 notes
+
+  // ============================================================
+  // State
+  // ============================================================
+  let tracks = [];
+  let nextTrackId = 1;
+  let selectedTrackId = null;
   let isPlaying = false, currentStep = 0, bpm = 120;
   let audioCtx = null, masterGain = null;
   let nextNoteTime = 0, timerID = null;
   const scheduleAheadTime = 0.12, lookahead = 25;
+  let keyboardOctave = 3;
 
   function noteFreq(name){
     const A4 = 440;
-    const notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const m = name.match(/([A-G]#?)(\d)/);
-    const n = notes.indexOf(m[1]);
+    const n = NOTE_NAMES.indexOf(m[1]);
     const octave = parseInt(m[2],10);
     const semitonesFromA4 = (octave-4)*12 + (n-9);
     return A4 * Math.pow(2, semitonesFromA4/12);
   }
   function noteNameToMidi(name){
-    const notes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const m = name.match(/([A-G]#?)(\d)/);
-    const n = notes.indexOf(m[1]);
+    const n = NOTE_NAMES.indexOf(m[1]);
     const octave = parseInt(m[2],10);
     return (octave+1)*12 + n;
   }
@@ -322,219 +540,164 @@
     for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
     return buffer;
   }
-  function trackGain(trackId, time){
+  function trackGainNode(vol, time){
     const g = audioCtx.createGain();
-    g.gain.setValueAtTime(volumes[trackId], time);
+    g.gain.setValueAtTime(vol, time);
     g.connect(masterGain);
     return g;
   }
 
-  // ---------- Drum synths ----------
-  function playKick(time, id){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='sine';
-    osc.frequency.setValueAtTime(150, time); osc.frequency.exponentialRampToValueAtTime(40, time+0.15);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.3);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.32);
-  }
-  function playSub(time, id){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='sine';
-    osc.frequency.setValueAtTime(70, time); osc.frequency.exponentialRampToValueAtTime(30, time+0.4);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.5);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.52);
-  }
-  function playSnare(time, id){
-    const g = trackGain(id, time);
-    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-    const bp = audioCtx.createBiquadFilter(); bp.type='highpass'; bp.frequency.value = 1000;
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.18);
-    noise.connect(bp); bp.connect(eg); eg.connect(g);
-    const osc = audioCtx.createOscillator(); osc.type='triangle'; osc.frequency.value=180;
-    const oeg = audioCtx.createGain();
-    oeg.gain.setValueAtTime(0.6, time); oeg.gain.exponentialRampToValueAtTime(0.001, time+0.12);
-    osc.connect(oeg); oeg.connect(g);
-    noise.start(time); noise.stop(time+0.2); osc.start(time); osc.stop(time+0.13);
-  }
-  function playRim(time, id){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='square'; osc.frequency.setValueAtTime(1400, time);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.5, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.04);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.05);
-  }
-  function playHat(time, id, open){
-    const g = trackGain(id, time);
-    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-    const hp = audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 7000;
-    const eg = audioCtx.createGain();
-    const dur = open ? 0.3 : 0.06;
-    eg.gain.setValueAtTime(0.8, time); eg.gain.exponentialRampToValueAtTime(0.001, time+dur);
-    noise.connect(hp); hp.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+dur+0.02);
-  }
-  function playShaker(time, id){
-    const g = trackGain(id, time);
-    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-    const bp = audioCtx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value = 6000; bp.Q.value=0.6;
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.5, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.12);
-    noise.connect(bp); bp.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+0.14);
-  }
-  function playRide(time, id){
-    const g = trackGain(id, time);
-    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-    const bp = audioCtx.createBiquadFilter(); bp.type='highpass'; bp.frequency.value = 5000;
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.5, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.5);
-    noise.connect(bp); bp.connect(eg); eg.connect(g);
-    [2500,3800,5200].forEach(f=>{
-      const osc = audioCtx.createOscillator(); osc.type='square'; osc.frequency.value=f;
-      const oeg = audioCtx.createGain();
-      oeg.gain.setValueAtTime(0.12, time); oeg.gain.exponentialRampToValueAtTime(0.001, time+0.4);
-      osc.connect(oeg); oeg.connect(g); osc.start(time); osc.stop(time+0.42);
-    });
-    noise.start(time); noise.stop(time+0.52);
-  }
-  function playCrash(time, id){
-    const g = trackGain(id, time);
-    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-    const hp = audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 4000;
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.6, time); eg.gain.exponentialRampToValueAtTime(0.001, time+1.1);
-    noise.connect(hp); hp.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+1.15);
-  }
-  function playClap(time, id){
-    const g = trackGain(id, time);
-    for(let i=0;i<3;i++){
-      const t = time + i*0.012;
-      const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
-      const bp = audioCtx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value = 1200;
-      const eg = audioCtx.createGain();
-      eg.gain.setValueAtTime(0.7, t); eg.gain.exponentialRampToValueAtTime(0.001, t+0.08);
-      noise.connect(bp); bp.connect(eg); eg.connect(g); noise.start(t); noise.stop(t+0.09);
+  // ---------- Generic drum engine ----------
+  function playDrumInstrument(time, inst, vol){
+    const g = trackGainNode(vol, time);
+    switch(inst.engine){
+      case 'tone': {
+        const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
+        osc.frequency.setValueAtTime(inst.freq, time);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, inst.freqEnd||inst.freq*0.6), time+inst.decay);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
+        break;
+      }
+      case 'noise': {
+        const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
+        const filt = audioCtx.createBiquadFilter(); filt.type = inst.filterType||'highpass';
+        filt.frequency.value = inst.filterFreq||5000; filt.Q.value = inst.q||0.5;
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+inst.decay+0.02);
+        break;
+      }
+      case 'tonenoise': {
+        const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
+        const filt = audioCtx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = inst.noiseFreq||1000;
+        const neg = audioCtx.createGain();
+        neg.gain.setValueAtTime(1, time); neg.gain.exponentialRampToValueAtTime(0.001, time+inst.noiseDecay);
+        noise.connect(filt); filt.connect(neg); neg.connect(g);
+        const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = inst.toneFreq;
+        const oeg = audioCtx.createGain();
+        oeg.gain.setValueAtTime(0.6, time); oeg.gain.exponentialRampToValueAtTime(0.001, time+inst.toneDecay);
+        osc.connect(oeg); oeg.connect(g);
+        noise.start(time); noise.stop(time+inst.noiseDecay+0.02); osc.start(time); osc.stop(time+inst.toneDecay+0.02);
+        break;
+      }
+      case 'metallic': {
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        eg.connect(g);
+        (inst.freqs||[800]).forEach(f=>{
+          const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.value = f;
+          const og = audioCtx.createGain(); og.gain.value = inst.mix||0.3;
+          osc.connect(og); og.connect(eg); osc.start(time); osc.stop(time+inst.decay+0.02);
+        });
+        if(inst.noiseFreq){
+          const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
+          const filt = audioCtx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = inst.noiseFreq;
+          noise.connect(filt); filt.connect(eg); noise.start(time); noise.stop(time+inst.decay+0.02);
+        }
+        break;
+      }
+      case 'clap': {
+        for(let i=0;i<(inst.repeats||3);i++){
+          const t = time + i*(inst.spacing||0.012);
+          const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
+          const filt = audioCtx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = inst.filterFreq||1200;
+          const eg = audioCtx.createGain();
+          eg.gain.setValueAtTime(0.8, t); eg.gain.exponentialRampToValueAtTime(0.001, t+inst.decay);
+          noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(t); noise.stop(t+inst.decay+0.02);
+        }
+        break;
+      }
+      case 'click': {
+        const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.setValueAtTime(inst.freq, time);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(0.6, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
+        break;
+      }
     }
   }
-  function playTom(time, id, pitch){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='sine';
-    osc.frequency.setValueAtTime(pitch, time); osc.frequency.exponentialRampToValueAtTime(pitch*0.6, time+0.2);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.9, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.28);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.3);
-  }
-  function playConga(time, id, pitch){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='sine';
-    osc.frequency.setValueAtTime(pitch, time); osc.frequency.exponentialRampToValueAtTime(pitch*0.75, time+0.1);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.8, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.14);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.16);
-  }
-  function playCowbell(time, id){
-    const g = trackGain(id, time);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.5, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.25);
-    [800,540].forEach(f=>{
-      const osc = audioCtx.createOscillator(); osc.type='square'; osc.frequency.value=f;
-      osc.connect(eg); osc.start(time); osc.stop(time+0.26);
-    });
-    eg.connect(g);
-  }
-  function playPerc(time, id){
-    const g = trackGain(id, time);
-    const osc = audioCtx.createOscillator(); osc.type='square';
-    osc.frequency.setValueAtTime(900, time); osc.frequency.exponentialRampToValueAtTime(300, time+0.05);
-    const eg = audioCtx.createGain();
-    eg.gain.setValueAtTime(0.5, time); eg.gain.exponentialRampToValueAtTime(0.001, time+0.07);
-    osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+0.08);
-  }
 
-  // ---------- Melodic synths ----------
-  function playLead(time, freq){
-    const g = audioCtx.createGain(); g.gain.setValueAtTime(leadVol, time); g.connect(masterGain);
-    const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, time);
-    const filt = audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 2400;
-    const eg = audioCtx.createGain();
-    const dur = (60/bpm)*0.9;
-    eg.gain.setValueAtTime(0.0001, time); eg.gain.linearRampToValueAtTime(1, time+0.01);
-    eg.gain.exponentialRampToValueAtTime(0.001, time+dur);
-    osc.connect(filt); filt.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+dur+0.02);
-  }
-  function playBass(time, freq){
-    const g = audioCtx.createGain(); g.gain.setValueAtTime(bassVol, time); g.connect(masterGain);
-    const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, time);
-    const sub = audioCtx.createOscillator(); sub.type='sine'; sub.frequency.setValueAtTime(freq/2, time);
-    const filt = audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 900;
-    const eg = audioCtx.createGain();
-    const dur = (60/bpm)*0.95;
-    eg.gain.setValueAtTime(0.0001, time); eg.gain.linearRampToValueAtTime(1, time+0.015);
-    eg.gain.exponentialRampToValueAtTime(0.001, time+dur);
-    osc.connect(filt); sub.connect(filt); filt.connect(eg); eg.connect(g);
-    osc.start(time); osc.stop(time+dur+0.02); sub.start(time); sub.stop(time+dur+0.02);
-  }
-  function playStrings(time, freq){
-    const g = audioCtx.createGain(); g.gain.setValueAtTime(stringsVol, time); g.connect(masterGain);
-    const filt = audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 2000;
-    const eg = audioCtx.createGain();
-    const dur = (60/bpm)*1.7;
+  // ---------- Generic melodic engine ----------
+  function playMelodicInstrument(time, freq, inst, gainMul){
+    const vol = (inst.vol||0.5) * (gainMul!==undefined ? gainMul : 1);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(vol, time); g.connect(masterGain);
+    let dest = g;
+    if(inst.filterType){
+      const filt = audioCtx.createBiquadFilter();
+      filt.type = inst.filterType; filt.frequency.value = inst.filterFreq||2000; filt.Q.value = inst.filterQ||1;
+      filt.connect(g); dest = filt;
+    }
+    const eg = audioCtx.createGain(); eg.connect(dest);
+    let dur;
+    if(inst.pluck){ dur = inst.decayTime || 0.5; }
+    else { dur = (60/bpm) * (inst.durBeats || 1.0); }
     eg.gain.setValueAtTime(0.0001, time);
-    eg.gain.linearRampToValueAtTime(1, time+0.18);
-    eg.gain.exponentialRampToValueAtTime(0.001, time+dur);
-    filt.connect(eg); eg.connect(g);
-    [-7,0,7].forEach(cents=>{
-      const osc = audioCtx.createOscillator(); osc.type='sawtooth';
+    eg.gain.linearRampToValueAtTime(1, time + (inst.attack||0.01));
+    eg.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    const unison = (inst.unison && inst.unison.length) ? inst.unison : [0];
+    unison.forEach(cents=>{
+      const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
       osc.frequency.setValueAtTime(freq, time); osc.detune.setValueAtTime(cents, time);
-      osc.connect(filt); osc.start(time); osc.stop(time+dur+0.05);
+      if(inst.vibratoRate && inst.vibratoDepth){
+        const lfo = audioCtx.createOscillator(); lfo.frequency.value = inst.vibratoRate;
+        const lfoGain = audioCtx.createGain(); lfoGain.gain.value = inst.vibratoDepth;
+        lfo.connect(lfoGain); lfoGain.connect(osc.detune); lfo.start(time); lfo.stop(time+dur+0.05);
+      }
+      osc.connect(eg); osc.start(time); osc.stop(time+dur+0.05);
     });
-  }
-
-  function triggerTrack(track, time){
-    if(mute[track.id]) return;
-    const anySolo = TRACKS.some(t=>solo[t.id]);
-    if(anySolo && !solo[track.id]) return;
-    switch(track.type){
-      case 'kick': playKick(time, track.id); break;
-      case 'sub': playSub(time, track.id); break;
-      case 'snare': playSnare(time, track.id); break;
-      case 'rim': playRim(time, track.id); break;
-      case 'hatC': playHat(time, track.id, false); break;
-      case 'hatO': playHat(time, track.id, true); break;
-      case 'shake': playShaker(time, track.id); break;
-      case 'ride': playRide(time, track.id); break;
-      case 'crash': playCrash(time, track.id); break;
-      case 'clap': playClap(time, track.id); break;
-      case 'tom': playTom(time, track.id, track.pitch); break;
-      case 'conga': playConga(time, track.id, track.pitch); break;
-      case 'cowbell': playCowbell(time, track.id); break;
-      case 'perc': playPerc(time, track.id); break;
+    if(inst.sub){
+      const sub = audioCtx.createOscillator(); sub.type = 'sine';
+      sub.frequency.setValueAtTime(freq*inst.sub, time);
+      const subGain = audioCtx.createGain(); subGain.gain.value = inst.subMix||0.3;
+      sub.connect(subGain); subGain.connect(eg); sub.start(time); sub.stop(time+dur+0.05);
     }
   }
 
-  // ---------- Scheduler ----------
+  function triggerTrackAudio(track, time){
+    if(track.mute) return;
+    const anySolo = tracks.some(t=>t.solo);
+    if(anySolo && !track.solo) return;
+    const inst = INSTRUMENTS_BY_ID[track.instId];
+    if(!inst) return;
+    if(inst.kind === 'drum') playDrumInstrument(time, inst, track.vol);
+  }
+
+  // ============================================================
+  // Scheduler
+  // ============================================================
   function scheduler(){
     while(nextNoteTime < audioCtx.currentTime + scheduleAheadTime){
       scheduleStep(currentStep, nextNoteTime);
       const secondsPerStep = (60/bpm)/4;
       nextNoteTime += secondsPerStep;
-      currentStep = (currentStep+1) % STEPS;
+      currentStep = (currentStep+1) % totalSteps;
     }
     timerID = setTimeout(scheduler, lookahead);
   }
   let uiStep = 0;
   function scheduleStep(step, time){
-    TRACKS.forEach(t=>{ if(patterns[t.id][step]) triggerTrack(t, time); });
-    if(rollState[step] !== null) playLead(time, noteFreq(NOTES[rollState[step]]));
-    if(bassState[step] !== null) playBass(time, noteFreq(BASS_NOTES[bassState[step]]));
-    if(stringState[step] !== null) playStrings(time, noteFreq(STRING_NOTES[stringState[step]]));
+    tracks.forEach(track=>{
+      const val = track.pattern[step];
+      if(track.kind === 'drum'){
+        if(val) triggerTrackAudio(track, time);
+      } else if(track.kind === 'melodic'){
+        if(val !== null && val !== undefined){
+          if(track.mute) return;
+          const anySolo = tracks.some(t=>t.solo);
+          if(anySolo && !track.solo) return;
+          const inst = INSTRUMENTS_BY_ID[track.instId];
+          if(inst) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
+        }
+      }
+    });
     const delay = (time - audioCtx.currentTime)*1000;
     setTimeout(()=>{ uiStep = step; updatePlayhead(); }, Math.max(0,delay));
   }
   function updatePlayhead(){
     document.querySelectorAll('.step, .cell').forEach(el=>{
-      el.classList.toggle('playhead', parseInt(el.dataset.step)===uiStep);
+      el.classList.toggle('playhead', parseInt(el.dataset.step,10)===uiStep);
     });
     document.querySelectorAll('#stepIndicator span').forEach((el,i)=>{
       el.classList.toggle('on', i===uiStep);
@@ -555,112 +718,273 @@
     document.querySelectorAll('#stepIndicator span').forEach(el=>el.classList.remove('on'));
   }
 
-  // ---------- Sequencer / roll UI ----------
+  // ============================================================
+  // Track list / sequencer UI
+  // ============================================================
   function buildStepIndicator(){
     const el = document.getElementById('stepIndicator'); el.innerHTML='';
-    for(let i=0;i<STEPS;i++){ el.appendChild(document.createElement('span')); }
+    const showCount = Math.min(totalSteps, 64);
+    for(let i=0;i<showCount;i++){ el.appendChild(document.createElement('span')); }
   }
   function buildSeqHeader(){
+    document.getElementById('barsVal').textContent = bars + (bars===1?' bar':' bars');
     const el = document.getElementById('seqHeader');
-    el.innerHTML = '<div></div><div></div>';
-    for(let i=0;i<STEPS;i++){
+    el.innerHTML = '';
+    for(let i=0;i<totalSteps;i++){
       const d = document.createElement('div');
-      d.className = 'num' + (i%4===0 ? ' beat' : '');
-      d.textContent = i%4===0 ? (i/4+1) : '·';
+      d.className = 'num' + (i%4===0 ? ' beat':'') + (i%STEP_PER_BAR===0 ? ' barstart':'');
+      d.textContent = i%STEP_PER_BAR===0 ? (Math.floor(i/STEP_PER_BAR)+1) : (i%4===0 ? '·':'');
       el.appendChild(d);
     }
+    buildStepIndicator();
   }
-  function buildTracks(){
-    ['tracksKick','tracksHats','tracksPerc'].forEach(gid=>document.getElementById(gid).innerHTML='');
-    TRACKS.forEach(track=>{
-      const wrap = document.getElementById(track.group);
+
+  function newTrackFromInstrument(inst){
+    return {
+      id: nextTrackId++,
+      name: inst.name,
+      instId: inst.id,
+      kind: inst.kind,
+      pattern: new Array(totalSteps).fill(inst.kind==='drum' ? false : null),
+      vol: inst.vol!==undefined ? inst.vol : 0.6,
+      mute: false,
+      solo: false
+    };
+  }
+
+  function buildTrackList(){
+    const wrap = document.getElementById('trackList');
+    wrap.innerHTML = '';
+    if(tracks.length===0){
+      const e = document.createElement('div'); e.className='empty-tracks';
+      e.textContent = 'No tracks yet — click "+ Add Track" to choose an instrument.';
+      wrap.appendChild(e);
+      return;
+    }
+    tracks.forEach(track=>{
+      const inst = INSTRUMENTS_BY_ID[track.instId];
       const row = document.createElement('div'); row.className='track-row';
+
+      const fixed = document.createElement('div'); fixed.className='track-fixed';
+      const nameWrap = document.createElement('div'); nameWrap.className='track-name-wrap';
       const nameEl = document.createElement('div'); nameEl.className='track-name'; nameEl.textContent = track.name;
-      row.appendChild(nameEl);
+      const instEl = document.createElement('div'); instEl.className='track-inst'; instEl.textContent = (inst?inst.cat:'') + ' · ' + (track.kind==='drum'?'drum':'melodic');
+      nameWrap.appendChild(nameEl); nameWrap.appendChild(instEl);
+      fixed.appendChild(nameWrap);
+
       const ctrl = document.createElement('div'); ctrl.className='track-controls';
-      const muteBtn = document.createElement('button'); muteBtn.className='mini-btn mute'; muteBtn.textContent='M';
-      muteBtn.onclick=()=>{ mute[track.id]=!mute[track.id]; muteBtn.classList.toggle('active', mute[track.id]); };
-      const soloBtn = document.createElement('button'); soloBtn.className='mini-btn solo'; soloBtn.textContent='S';
-      soloBtn.onclick=()=>{ solo[track.id]=!solo[track.id]; soloBtn.classList.toggle('active', solo[track.id]); };
-      ctrl.appendChild(muteBtn); ctrl.appendChild(soloBtn); row.appendChild(ctrl);
-      for(let i=0;i<STEPS;i++){
-        const step = document.createElement('div');
-        step.className='step' + (i%4===2 ? ' beat3':'');
-        step.dataset.step = i;
-        step.onclick=()=>{
-          patterns[track.id][i] = !patterns[track.id][i];
-          step.classList.toggle('active', patterns[track.id][i]);
-          if(patterns[track.id][i]){ ensureAudio(); triggerTrack(track, audioCtx.currentTime+0.02); }
+      const muteBtn = document.createElement('button'); muteBtn.className='mini-btn mute'+(track.mute?' active':''); muteBtn.textContent='M';
+      muteBtn.onclick=()=>{ track.mute=!track.mute; muteBtn.classList.toggle('active', track.mute); };
+      const soloBtn = document.createElement('button'); soloBtn.className='mini-btn solo'+(track.solo?' active':''); soloBtn.textContent='S';
+      soloBtn.onclick=()=>{ track.solo=!track.solo; soloBtn.classList.toggle('active', track.solo); };
+      ctrl.appendChild(muteBtn); ctrl.appendChild(soloBtn);
+
+      if(track.kind==='melodic'){
+        const editBtn = document.createElement('button'); editBtn.className='mini-btn edit'+(selectedTrackId===track.id?' active':''); editBtn.textContent='♪';
+        editBtn.title='Open piano roll';
+        editBtn.onclick=()=>{
+          if(selectedTrackId===track.id){ closeRollEditor(); }
+          else { openRollEditor(track.id); }
         };
-        row.appendChild(step);
+        ctrl.appendChild(editBtn);
       }
+      const delBtn = document.createElement('button'); delBtn.className='mini-btn del'; delBtn.textContent='✕'; delBtn.title='Remove track';
+      delBtn.onclick=()=>{
+        tracks = tracks.filter(t=>t.id!==track.id);
+        if(selectedTrackId===track.id) closeRollEditor();
+        buildTrackList(); buildMixer();
+      };
+      ctrl.appendChild(delBtn);
+      fixed.appendChild(ctrl);
+      row.appendChild(fixed);
+
+      const grid = document.createElement('div'); grid.className='track-grid';
+      for(let i=0;i<totalSteps;i++){
+        const step = document.createElement('div');
+        const isMelodic = track.kind==='melodic';
+        step.className = 'step' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'') + (isMelodic?' melodic-block':'');
+        step.dataset.step = i;
+        if(isMelodic){
+          if(track.pattern[i]!==null && track.pattern[i]!==undefined) step.classList.add('active');
+          step.title = 'Open piano roll to edit notes';
+          step.onclick = ()=>{ openRollEditor(track.id); scrollRollToStep(i); };
+        } else {
+          if(track.pattern[i]) step.classList.add('active');
+          step.onclick = ()=>{
+            track.pattern[i] = !track.pattern[i];
+            step.classList.toggle('active', track.pattern[i]);
+            if(track.pattern[i]){ ensureAudio(); triggerTrackAudio(track, audioCtx.currentTime+0.02); }
+          };
+        }
+        grid.appendChild(step);
+      }
+      row.appendChild(grid);
       wrap.appendChild(row);
     });
   }
-  function buildRoll(containerId, notes, state, playFn){
-    const wrap = document.getElementById(containerId); wrap.innerHTML='';
-    notes.forEach((note, ni)=>{
+
+  // ============================================================
+  // Instrument picker
+  // ============================================================
+  function buildInstrumentPicker(){
+    document.getElementById('instCountLabel').textContent = INSTRUMENTS.length;
+    renderInstrumentCategories('');
+    document.getElementById('instSearch').oninput = (e)=> renderInstrumentCategories(e.target.value.trim().toLowerCase());
+  }
+  function renderInstrumentCategories(filter){
+    const wrap = document.getElementById('instCatWrap');
+    wrap.innerHTML = '';
+    CATEGORY_ORDER.forEach(cat=>{
+      const list = INSTRUMENTS.filter(inst=> inst.cat===cat && (!filter || inst.name.toLowerCase().includes(filter)));
+      if(list.length===0) return;
+      const catDiv = document.createElement('div'); catDiv.className='inst-cat';
+      const title = document.createElement('div'); title.className='inst-cat-title'; title.textContent = cat + ' (' + list.length + ')';
+      const grid = document.createElement('div'); grid.className='inst-grid';
+      list.forEach(inst=>{
+        const btn = document.createElement('button');
+        btn.className = 'inst-btn ' + inst.kind;
+        btn.textContent = inst.name;
+        btn.onclick = ()=>{
+          const t = newTrackFromInstrument(inst);
+          tracks.push(t);
+          buildTrackList(); buildMixer(); buildStepIndicator();
+          document.getElementById('instPicker').classList.remove('open');
+          setStatus('Added track: ' + inst.name);
+        };
+        grid.appendChild(btn);
+      });
+      catDiv.appendChild(title); catDiv.appendChild(grid);
+      wrap.appendChild(catDiv);
+    });
+  }
+
+  // ============================================================
+  // Piano roll editor (per selected melodic track)
+  // ============================================================
+  function openRollEditor(trackId){
+    selectedTrackId = trackId;
+    const track = tracks.find(t=>t.id===trackId);
+    if(!track) return;
+    document.getElementById('rollEditorPanel').classList.add('open');
+    document.getElementById('rollTrackName').textContent = track.name;
+    buildRollEditor(track);
+    buildTrackList();
+  }
+  function closeRollEditor(){
+    selectedTrackId = null;
+    document.getElementById('rollEditorPanel').classList.remove('open');
+    buildTrackList();
+  }
+  function buildRollEditor(track){
+    const wrap = document.getElementById('pianoRoll');
+    wrap.innerHTML = '';
+    NOTE_RANGE.forEach((note, ni)=>{
       const row = document.createElement('div'); row.className='roll-row';
-      const label = document.createElement('div'); label.className='roll-note mono'; label.textContent = note;
+      const isC = note.startsWith('C') && !note.startsWith('C#');
+      const label = document.createElement('div'); label.className='roll-note mono' + (isC?' c-note':''); label.textContent = note;
       row.appendChild(label);
       const isBlack = note.includes('#');
-      for(let i=0;i<STEPS;i++){
+      for(let i=0;i<totalSteps;i++){
         const cell = document.createElement('div');
-        cell.className='cell' + (isBlack?' black-key':'') + (i%4===2?' beat3':'');
+        cell.className = 'cell' + (isBlack?' black-key':'') + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
         cell.dataset.step = i; cell.dataset.note = ni;
-        cell.onclick=()=>{
-          const wasActive = state[i]===ni;
-          document.querySelectorAll(`#${containerId} .cell[data-step="${i}"]`).forEach(c=>c.classList.remove('active'));
-          state[i] = wasActive ? null : ni;
-          if(!wasActive){ cell.classList.add('active'); ensureAudio(); playFn(audioCtx.currentTime+0.02, noteFreq(note)); }
+        if(track.pattern[i]===ni) cell.classList.add('active');
+        cell.onclick = ()=>{
+          const wasActive = track.pattern[i]===ni;
+          wrap.querySelectorAll(`.cell[data-step="${i}"]`).forEach(c=>c.classList.remove('active'));
+          track.pattern[i] = wasActive ? null : ni;
+          if(!wasActive){
+            cell.classList.add('active'); ensureAudio();
+            const inst = INSTRUMENTS_BY_ID[track.instId];
+            playMelodicInstrument(audioCtx.currentTime+0.02, noteFreq(note), inst, track.vol);
+          }
+          const overviewStep = document.querySelector(`.track-grid .step[data-step="${i}"]`);
+          buildTrackList();
         };
         row.appendChild(cell);
       }
       wrap.appendChild(row);
     });
+    // scroll roughly to the middle (around C4) by default
+    const scrollEl = document.getElementById('rollScroll');
+    const middleIndex = NOTE_RANGE.indexOf('C4');
+    if(middleIndex>=0){ scrollEl.scrollTop = Math.max(0, middleIndex*19 - 150); }
   }
+  function scrollRollToStep(step){
+    const scrollEl = document.getElementById('rollScroll');
+    const cell = scrollEl.querySelector(`.cell[data-step="${step}"]`);
+    if(cell) scrollEl.scrollLeft = Math.max(0, cell.offsetLeft - 100);
+  }
+
+  // ============================================================
+  // Mixer
+  // ============================================================
   function buildMixer(){
     const wrap = document.getElementById('mixer'); wrap.innerHTML='';
-    const entries = TRACKS.map(t=>({id:t.id,name:t.name}))
-      .concat([{id:'lead',name:'Lead Synth'},{id:'bass',name:'Bass Line'},{id:'strings',name:'Strings Pad'}]);
-    entries.forEach(track=>{
+    tracks.forEach(track=>{
       const strip = document.createElement('div'); strip.className='strip';
       const name = document.createElement('div'); name.className='strip-name'; name.textContent = track.name;
       const slider = document.createElement('input'); slider.type='range'; slider.min=0; slider.max=100;
-      const initial = track.id==='lead' ? leadVol : track.id==='bass' ? bassVol : track.id==='strings' ? stringsVol : volumes[track.id];
-      slider.value = Math.round(initial*100);
+      slider.value = Math.round(track.vol*100);
       const val = document.createElement('div'); val.className='val mono'; val.textContent = slider.value+'%';
-      slider.oninput = ()=>{
-        const v = slider.value/100; val.textContent = slider.value+'%';
-        if(track.id==='lead') leadVol=v; else if(track.id==='bass') bassVol=v;
-        else if(track.id==='strings') stringsVol=v; else volumes[track.id]=v;
-      };
+      slider.oninput = ()=>{ track.vol = slider.value/100; val.textContent = slider.value+'%'; };
       strip.appendChild(name); strip.appendChild(slider); strip.appendChild(val);
       wrap.appendChild(strip);
     });
+    if(tracks.length===0){
+      const e = document.createElement('div'); e.style.color='var(--text-dim)'; e.style.fontSize='12px';
+      e.textContent = 'Add tracks to see mixer channels.';
+      wrap.appendChild(e);
+    }
   }
 
-  // ---------- Virtual piano ----------
+  function refreshAllUI(){
+    buildSeqHeader();
+    buildTrackList();
+    buildMixer();
+    if(selectedTrackId!==null){
+      const t = tracks.find(tr=>tr.id===selectedTrackId);
+      if(t) buildRollEditor(t); else closeRollEditor();
+    }
+  }
+
+  // ============================================================
+  // Virtual piano
+  // ============================================================
   const OCTAVE_PATTERN = [
     {note:'C', black:false},{note:'C#', black:true},{note:'D', black:false},{note:'D#', black:true},
     {note:'E', black:false},{note:'F', black:false},{note:'F#', black:true},{note:'G', black:false},
     {note:'G#', black:true},{note:'A', black:false},{note:'A#', black:true},{note:'B', black:false},
   ];
-  const KEY_MAP = {
-    'a':'C3','w':'C#3','s':'D3','e':'D#3','d':'E3','f':'F3','t':'F#3','g':'G3','y':'G#3','h':'A3','u':'A#3','j':'B3',
-    'k':'C4','o':'C#4','l':'D4','p':'D#4'
+  const KEY_MAP_BASE = {
+    'a':'C','w':'C#','s':'D','e':'D#','d':'E','f':'F','t':'F#','g':'G','y':'G#','h':'A','u':'A#','j':'B',
+    'k':'C1o','o':'C#1o','l':'D1o','p':'D#1o' // "1o" = one octave up from base key octave
   };
+
+  function buildPianoInstrumentSelect(){
+    const sel = document.getElementById('pianoInstrument');
+    sel.innerHTML = '';
+    CATEGORY_ORDER.forEach(cat=>{
+      const list = MELODIC_INSTRUMENTS.filter(i=>i.cat===cat);
+      if(list.length===0) return;
+      const grp = document.createElement('optgroup'); grp.label = cat;
+      list.forEach(inst=>{
+        const opt = document.createElement('option'); opt.value = inst.id; opt.textContent = inst.name;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    });
+  }
   function playSelectedInstrument(fullNote){
     ensureAudio();
     const freq = noteFreq(fullNote);
-    const inst = document.getElementById('pianoInstrument').value;
+    const instId = document.getElementById('pianoInstrument').value;
+    const inst = INSTRUMENTS_BY_ID[instId] || MELODIC_INSTRUMENTS[0];
     const t = audioCtx.currentTime+0.01;
-    if(inst==='lead') playLead(t, freq);
-    else if(inst==='bass') playBass(t, freq);
-    else playStrings(t, freq);
+    playMelodicInstrument(t, freq, inst, inst.vol!==undefined?inst.vol:0.6);
   }
   function flashKey(fullNote){
-    const el = document.querySelector(`.piano [data-note="${fullNote}"]`) || document.querySelector(`[data-note="${fullNote}"]`);
+    const el = document.querySelector(`.piano [data-note="${fullNote}"]`);
     if(el){ el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), 160); }
   }
   function buildPiano(){
@@ -668,8 +992,7 @@
     piano.innerHTML='';
     const whiteW = 38, blackW = 24;
     let whiteCount = 0;
-    const octaves = [3,4];
-    const keyEls = [];
+    const octaves = [1,2,3,4,5,6,7];
     octaves.forEach(oct=>{
       OCTAVE_PATTERN.forEach(k=>{
         const fullNote = k.note + oct;
@@ -693,78 +1016,110 @@
         }
       });
     });
-    // closing C
     const el = document.createElement('div');
-    el.className='white-key'; el.dataset.note='C5';
-    el.style.left = (whiteCount*whiteW)+'px'; el.textContent='C5';
-    el.addEventListener('mousedown', ()=>{ playSelectedInstrument('C5'); el.classList.add('active'); });
+    el.className='white-key'; el.dataset.note='C8';
+    el.style.left = (whiteCount*whiteW)+'px'; el.textContent='C8';
+    el.addEventListener('mousedown', ()=>{ playSelectedInstrument('C8'); el.classList.add('active'); });
     el.addEventListener('mouseup', ()=>el.classList.remove('active'));
     el.addEventListener('mouseleave', ()=>el.classList.remove('active'));
     piano.appendChild(el); whiteCount++;
     piano.style.width = (whiteCount*whiteW + 10)+'px';
+    // scroll roughly to octave 3-4
+    const pianoWrap = document.querySelector('.piano-wrap');
+    pianoWrap.scrollLeft = 2*7*whiteW;
+  }
+  function updateOctLabel(){
+    document.getElementById('octVal').textContent = 'Octave ' + keyboardOctave;
   }
   document.addEventListener('keydown', (e)=>{
     if(e.repeat) return;
-    const note = KEY_MAP[e.key.toLowerCase()];
-    if(note){ playSelectedInstrument(note); flashKey(note); }
+    const key = e.key.toLowerCase();
+    if(key==='z'){ keyboardOctave = Math.max(1, keyboardOctave-1); updateOctLabel(); return; }
+    if(key==='x'){ keyboardOctave = Math.min(6, keyboardOctave+1); updateOctLabel(); return; }
+    const mapped = KEY_MAP_BASE[key];
+    if(mapped){
+      let name = mapped, oct = keyboardOctave;
+      if(mapped.endsWith('1o')){ name = mapped.slice(0,-2); oct = keyboardOctave+1; }
+      const note = name + oct;
+      playSelectedInstrument(note); flashKey(note);
+    }
   });
+  document.getElementById('octDown').onclick = ()=>{ keyboardOctave = Math.max(1, keyboardOctave-1); updateOctLabel(); };
+  document.getElementById('octUp').onclick = ()=>{ keyboardOctave = Math.min(6, keyboardOctave+1); updateOctLabel(); };
 
-  // ---------- Actions ----------
+  // ============================================================
+  // Transport / bars / actions
+  // ============================================================
   document.getElementById('playBtn').onclick = ()=>{ isPlaying ? stop() : play(); };
   document.getElementById('bpmInput').oninput = (e)=>{ bpm = Math.max(40, Math.min(220, parseInt(e.target.value)||120)); };
   document.getElementById('masterVol').oninput = (e)=>{ if(masterGain) masterGain.gain.value = e.target.value/100; };
+  document.getElementById('addTrackBtn').onclick = ()=>{
+    document.getElementById('instPicker').classList.toggle('open');
+  };
+
+  document.getElementById('barPlus').onclick = ()=>{
+    bars++; totalSteps = bars*STEP_PER_BAR;
+    tracks.forEach(t=>{
+      const fill = t.kind==='drum' ? false : null;
+      for(let i=0;i<STEP_PER_BAR;i++) t.pattern.push(fill);
+    });
+    refreshAllUI();
+    setStatus('Added a bar — now ' + bars + ' bars.');
+  };
+  document.getElementById('barMinus').onclick = ()=>{
+    if(bars<=1){ setStatus('Minimum is 1 bar.'); return; }
+    bars--; totalSteps = bars*STEP_PER_BAR;
+    tracks.forEach(t=>{ t.pattern.length = totalSteps; });
+    refreshAllUI();
+    setStatus('Removed a bar — now ' + bars + ' bars.');
+  };
 
   document.getElementById('clearBtn').onclick = ()=>{
-    TRACKS.forEach(t=>patterns[t.id].fill(false));
-    rollState.fill(null); bassState.fill(null); stringState.fill(null);
-    document.querySelectorAll('.step.active, .cell.active').forEach(el=>el.classList.remove('active'));
+    tracks.forEach(t=>{ t.pattern.fill(t.kind==='drum' ? false : null); });
+    refreshAllUI();
     setStatus('Pattern cleared.');
   };
   document.getElementById('randomizeBtn').onclick = ()=>{
-    TRACKS.forEach(t=>{
-      for(let i=0;i<STEPS;i++){
-        let prob = 0.12;
-        if(t.id==='kick') prob = i%4===0 ? 0.9 : 0.08;
-        if(t.id==='sub') prob = i%8===0 ? 0.5 : 0.05;
-        if(t.id==='chat') prob = 0.55;
-        if(t.id==='snare') prob = (i%8===4) ? 0.85 : 0.05;
-        if(t.id==='shake') prob = 0.3;
-        patterns[t.id][i] = Math.random() < prob;
+    tracks.forEach(t=>{
+      if(t.kind==='drum'){
+        const nameLc = t.name.toLowerCase();
+        let prob = 0.14;
+        if(nameLc.includes('kick')) prob = 0.9;
+        if(nameLc.includes('sub')) prob = 0.3;
+        if(nameLc.includes('hat closed')) prob = 0.55;
+        if(nameLc.includes('snare')) prob = 0.35;
+        if(nameLc.includes('shak')||nameLc.includes('cabasa')) prob = 0.3;
+        for(let i=0;i<totalSteps;i++){
+          let p = prob;
+          if(nameLc.includes('kick')) p = (i%4===0) ? 0.9 : 0.08;
+          if(nameLc.includes('snare')) p = (i%8===4) ? 0.85 : 0.05;
+          t.pattern[i] = Math.random() < p;
+        }
+      } else {
+        for(let i=0;i<totalSteps;i++){
+          t.pattern[i] = Math.random()<0.3 ? (20 + Math.floor(Math.random()*24)) : null;
+        }
       }
     });
-    for(let i=0;i<STEPS;i++){
-      rollState[i] = Math.random()<0.4 ? Math.floor(Math.random()*NOTES.length) : null;
-      bassState[i] = (i%4===0 && Math.random()<0.8) ? Math.floor(Math.random()*BASS_NOTES.length) : null;
-      stringState[i] = (i%8===0 && Math.random()<0.7) ? Math.floor(Math.random()*STRING_NOTES.length) : null;
-    }
-    refreshGridUI();
+    refreshAllUI();
     setStatus('Randomized a new pattern.');
   };
-  function refreshGridUI(){
-    document.querySelectorAll('.track-row').forEach((row, idx)=>{
-      const track = TRACKS[idx];
-      row.querySelectorAll('.step').forEach(el=>{
-        el.classList.toggle('active', patterns[track.id][el.dataset.step]);
-      });
-    });
-    document.querySelectorAll('#pianoRoll .cell').forEach(el=>{
-      el.classList.toggle('active', rollState[el.dataset.step]==el.dataset.note);
-    });
-    document.querySelectorAll('#bassRoll .cell').forEach(el=>{
-      el.classList.toggle('active', bassState[el.dataset.step]==el.dataset.note);
-    });
-    document.querySelectorAll('#stringsRoll .cell').forEach(el=>{
-      el.classList.toggle('active', stringState[el.dataset.step]==el.dataset.note);
-    });
-  }
+
   function setStatus(msg){
     document.getElementById('statusMsg').textContent = msg;
     setTimeout(()=>{ document.getElementById('statusMsg').textContent=''; }, 3500);
   }
 
+  // ============================================================
+  // Save / Load
+  // ============================================================
   document.getElementById('saveBtn').onclick = async ()=>{
     try{
-      const data = { patterns, rollState, bassState, stringState, bpm, volumes, leadVol, bassVol, stringsVol };
+      const data = {
+        bars, bpm,
+        tracks: tracks.map(t=>({ id:t.id, name:t.name, instId:t.instId, kind:t.kind, pattern:t.pattern, vol:t.vol, mute:t.mute, solo:t.solo })),
+        masterVol: document.getElementById('masterVol').value
+      };
       const res = await window.storage.set('deck16:pattern', JSON.stringify(data), false);
       setStatus(res ? 'Pattern saved.' : 'Save failed.');
     }catch(err){ setStatus('Save failed — storage unavailable.'); }
@@ -774,24 +1129,25 @@
       const res = await window.storage.get('deck16:pattern', false);
       if(!res){ setStatus('No saved pattern found.'); return; }
       const data = JSON.parse(res.value);
-      patterns = data.patterns; rollState = data.rollState;
-      bassState = data.bassState || new Array(STEPS).fill(null);
-      stringState = data.stringState || new Array(STEPS).fill(null);
-      bpm = data.bpm || 120; volumes = data.volumes || volumes;
-      leadVol = data.leadVol ?? leadVol; bassVol = data.bassVol ?? bassVol; stringsVol = data.stringsVol ?? stringsVol;
+      bars = data.bars || 4; totalSteps = bars*STEP_PER_BAR; bpm = data.bpm || 120;
+      tracks = (data.tracks||[]).filter(t=>INSTRUMENTS_BY_ID[t.instId]).map(t=>({
+        id: nextTrackId++, name:t.name, instId:t.instId, kind:t.kind,
+        pattern: (t.pattern||[]).slice(0,totalSteps).concat(new Array(Math.max(0,totalSteps-(t.pattern||[]).length)).fill(t.kind==='drum'?false:null)),
+        vol: t.vol!==undefined?t.vol:0.6, mute: !!t.mute, solo: !!t.solo
+      }));
       document.getElementById('bpmInput').value = bpm;
-      refreshGridUI(); buildMixer();
+      if(data.masterVol!==undefined) document.getElementById('masterVol').value = data.masterVol;
+      selectedTrackId = null;
+      document.getElementById('rollEditorPanel').classList.remove('open');
+      refreshAllUI();
       setStatus('Pattern loaded.');
     }catch(err){ setStatus('No saved pattern found.'); }
   };
+  document.getElementById('closeRollBtn').onclick = closeRollEditor;
 
-  // ---------- MIDI export ----------
-  const DRUM_MIDI_MAP = {
-    kick:36, sub:35, snare:38, rim:37, clap:39,
-    chat:42, ohat:46, shake:70, ride:51, crash:49,
-    tomL:45, tomM:47, tomH:50, congaL:64, congaH:62, cowbell:56, perc:75
-  };
-  const LEAD_PROGRAM = 80, BASS_PROGRAM = 38, STRINGS_PROGRAM = 48;
+  // ============================================================
+  // MIDI export
+  // ============================================================
   const TICKS_PER_QUARTER = 96, TICKS_PER_STEP = TICKS_PER_QUARTER/4;
 
   function writeVarLen(value){
@@ -817,7 +1173,7 @@
   }
   function drumEvents(pattern, note, channel, lenTicks){
     const events=[];
-    for(let i=0;i<STEPS;i++){
+    for(let i=0;i<totalSteps;i++){
       if(pattern[i]){
         events.push({tick:i*TICKS_PER_STEP, type:'on', note, vel:100, ch:channel});
         events.push({tick:i*TICKS_PER_STEP+lenTicks, type:'off', note, vel:0, ch:channel});
@@ -825,12 +1181,12 @@
     }
     return events;
   }
-  function melodicEvents(state, notesArr, channel, lenTicks){
+  function melodicEvents(pattern, channel, lenTicks){
     const events=[];
-    for(let i=0;i<STEPS;i++){
-      const idx = state[i];
+    for(let i=0;i<totalSteps;i++){
+      const idx = pattern[i];
       if(idx!==null && idx!==undefined){
-        const note = noteNameToMidi(notesArr[idx]);
+        const note = noteNameToMidi(NOTE_RANGE[idx]);
         events.push({tick:i*TICKS_PER_STEP, type:'on', note, vel:100, ch:channel});
         events.push({tick:i*TICKS_PER_STEP+lenTicks, type:'off', note, vel:0, ch:channel});
       }
@@ -849,30 +1205,32 @@
       if(e.type==='on') bytes.push(0x90|e.ch, e.note, e.vel);
       else bytes.push(0x80|e.ch, e.note, 0);
     });
-    const endDelta = Math.max(0, STEPS*TICKS_PER_STEP - lastTick);
+    const endDelta = Math.max(0, totalSteps*TICKS_PER_STEP - lastTick);
     bytes.push(...writeVarLen(endDelta), 0xFF,0x2F,0x00);
     return bytes;
   }
   function exportMIDI(){
     const trackChunks = [ midiChunk('MTrk', buildTempoTrack()) ];
-    TRACKS.forEach(t=>{
-      if(patterns[t.id].some(x=>x)){
-        const ev = drumEvents(patterns[t.id], DRUM_MIDI_MAP[t.id], 9, 12);
-        trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, t.name, undefined, 9)));
+    let melodicChannel = 0;
+    tracks.forEach(track=>{
+      const inst = INSTRUMENTS_BY_ID[track.instId];
+      if(!inst) return;
+      if(track.kind==='drum'){
+        if(track.pattern.some(x=>x)){
+          const note = DRUM_MIDI_MAP[track.instId] !== undefined ? DRUM_MIDI_MAP[track.instId] : 37;
+          const ev = drumEvents(track.pattern, note, 9, 12);
+          trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, track.name, undefined, 9)));
+        }
+      } else {
+        if(track.pattern.some(x=>x!==null && x!==undefined)){
+          let ch = melodicChannel % 16; if(ch===9) ch = (melodicChannel+1)%16;
+          melodicChannel++;
+          const program = CATEGORY_PROGRAM[inst.cat] !== undefined ? CATEGORY_PROGRAM[inst.cat] : 0;
+          const ev = melodicEvents(track.pattern, ch, 22);
+          trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, track.name, program, ch)));
+        }
       }
     });
-    if(rollState.some(x=>x!==null)){
-      const ev = melodicEvents(rollState, NOTES, 0, 22);
-      trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, 'Lead', LEAD_PROGRAM, 0)));
-    }
-    if(bassState.some(x=>x!==null)){
-      const ev = melodicEvents(bassState, BASS_NOTES, 1, 22);
-      trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, 'Bass', BASS_PROGRAM, 1)));
-    }
-    if(stringState.some(x=>x!==null)){
-      const ev = melodicEvents(stringState, STRING_NOTES, 2, 22);
-      trackChunks.push(midiChunk('MTrk', eventsToTrackBytes(ev, 'Strings', STRINGS_PROGRAM, 2)));
-    }
     if(trackChunks.length===1){ setStatus('Nothing to export — add some steps first.'); return; }
     const header = midiChunk('MThd', [...u16(1), ...u16(trackChunks.length), ...u16(TICKS_PER_QUARTER)]);
     const allBytes = new Uint8Array([...header, ...trackChunks.flat()]);
@@ -898,14 +1256,12 @@
       do{ byte = data[pos++]; value = (value<<7) | (byte & 0x7F); } while(byte & 0x80);
       return value;
     }
-    readStr(4); // 'MThd'
-    readUint32(); // header length
-    readUint16(); // format
+    readStr(4); readUint32(); readUint16();
     const numTracks = readUint16();
     const division = readUint16();
     const noteOnEvents = [];
     for(let t=0;t<numTracks;t++){
-      readStr(4); // 'MTrk'
+      readStr(4);
       const trackLen = readUint32();
       const trackEnd = pos + trackLen;
       let tick = 0, runningStatus = null;
@@ -928,33 +1284,47 @@
     }
     return { division, noteOnEvents };
   }
-  function assignMelodic(stateArr, notesArr, step, midiNote){
+  function nearestNoteIndex(midiNote){
     let bestIdx=0, bestDist=999;
-    notesArr.forEach((n,i)=>{ const d=Math.abs(noteNameToMidi(n)-midiNote); if(d<bestDist){bestDist=d; bestIdx=i;} });
-    stateArr[step] = bestIdx;
+    NOTE_RANGE.forEach((n,i)=>{ const d=Math.abs(noteNameToMidi(n)-midiNote); if(d<bestDist){bestDist=d; bestIdx=i;} });
+    return bestIdx;
   }
   async function importMIDI(file){
     try{
       const buf = await file.arrayBuffer();
       const { division, noteOnEvents } = parseMidiFile(buf);
-      const stepTicks = division/4, barTicks = division*4;
-      TRACKS.forEach(t=>patterns[t.id].fill(false));
-      rollState.fill(null); bassState.fill(null); stringState.fill(null);
+      const stepTicks = division/4;
+      const songTicks = totalSteps*stepTicks;
+      tracks.forEach(t=> t.pattern.fill(t.kind==='drum' ? false : null));
+      const drumTracks = tracks.filter(t=>t.kind==='drum');
+      const melodicTracks = tracks.filter(t=>t.kind==='melodic');
+      const channelToMelodicTrack = {};
+      let mi = 0;
       let placed = 0;
       noteOnEvents.forEach(ev=>{
-        if(ev.tick >= barTicks) return;
-        const step = Math.min(15, Math.round(ev.tick/stepTicks) % 16);
+        if(ev.tick >= songTicks) return;
+        const step = Math.min(totalSteps-1, Math.round(ev.tick/stepTicks));
         if(ev.channel === 9){
+          if(drumTracks.length===0) return;
           let best=null, bd=999;
-          TRACKS.forEach(t=>{ const d=Math.abs(DRUM_MIDI_MAP[t.id]-ev.note); if(d<bd){bd=d; best=t;} });
-          if(best){ patterns[best.id][step]=true; placed++; }
-        } else if(ev.channel === 0){ assignMelodic(rollState, NOTES, step, ev.note); placed++; }
-        else if(ev.channel === 1){ assignMelodic(bassState, BASS_NOTES, step, ev.note); placed++; }
-        else if(ev.channel === 2){ assignMelodic(stringState, STRING_NOTES, step, ev.note); placed++; }
-        else { assignMelodic(rollState, NOTES, step, ev.note); placed++; }
+          drumTracks.forEach(t=>{
+            const mapped = DRUM_MIDI_MAP[t.instId] !== undefined ? DRUM_MIDI_MAP[t.instId] : 37;
+            const d=Math.abs(mapped-ev.note); if(d<bd){bd=d; best=t;}
+          });
+          if(best){ best.pattern[step]=true; placed++; }
+        } else {
+          if(melodicTracks.length===0) return;
+          if(channelToMelodicTrack[ev.channel]===undefined){
+            channelToMelodicTrack[ev.channel] = melodicTracks[mi % melodicTracks.length];
+            mi++;
+          }
+          const track = channelToMelodicTrack[ev.channel];
+          track.pattern[step] = nearestNoteIndex(ev.note);
+          placed++;
+        }
       });
-      refreshGridUI();
-      setStatus(placed>0 ? 'MIDI imported — first bar mapped to 16 steps.' : 'No usable notes found in first bar.');
+      refreshAllUI();
+      setStatus(placed>0 ? 'MIDI imported into existing tracks.' : 'No usable notes found, or no matching tracks exist.');
     }catch(err){ setStatus('Could not read that MIDI file.'); }
   }
   document.getElementById('importMidiBtn').onclick = ()=> document.getElementById('midiFileInput').click();
@@ -964,16 +1334,29 @@
     e.target.value = '';
   };
 
-  // ---------- Init ----------
-  buildStepIndicator();
+  // ============================================================
+  // Init
+  // ============================================================
+  function addDefaultTrack(instId){
+    const inst = INSTRUMENTS_BY_ID[instId];
+    if(inst) tracks.push(newTrackFromInstrument(inst));
+  }
+  addDefaultTrack('kick808');
+  addDefaultTrack('snareAcoustic');
+  addDefaultTrack('hatClosed');
+  addDefaultTrack('clap');
+  addDefaultTrack('subBass');
+  addDefaultTrack('grandPiano');
+
+  buildInstrumentPicker();
+  buildPianoInstrumentSelect();
   buildSeqHeader();
-  buildTracks();
-  buildRoll('pianoRoll', NOTES, rollState, playLead);
-  buildRoll('bassRoll', BASS_NOTES, bassState, playBass);
-  buildRoll('stringsRoll', STRING_NOTES, stringState, playStrings);
+  buildTrackList();
   buildMixer();
   buildPiano();
+  updateOctLabel();
 })();
+
 </script>
 </body>
 </html>
