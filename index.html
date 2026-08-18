@@ -1260,6 +1260,7 @@
     const numTracks = readUint16();
     const division = readUint16();
     const noteOnEvents = [];
+    const programChanges = {};
     for(let t=0;t<numTracks;t++){
       readStr(4);
       const trackLen = readUint32();
@@ -1275,14 +1276,52 @@
           if(vel>0) noteOnEvents.push({tick, note, channel});
         } else if(type === 0x80){ pos+=2; }
         else if(type===0xA0 || type===0xB0 || type===0xE0){ pos+=2; }
-        else if(type===0xC0 || type===0xD0){ pos+=1; }
+        else if(type===0xC0){
+          const program = data[pos++];
+          if(programChanges[channel]===undefined) programChanges[channel] = program;
+        }
+        else if(type===0xD0){ pos+=1; }
         else if(statusByte === 0xFF){ pos++; const len = readVarLen(); pos += len; }
         else if(statusByte === 0xF0 || statusByte === 0xF7){ const len = readVarLen(); pos += len; }
         else { pos = trackEnd; }
       }
       pos = trackEnd;
     }
-    return { division, noteOnEvents };
+    return { division, noteOnEvents, programChanges };
+  }
+  // GM-ish program number -> instrument category, for auto-creating melodic tracks
+  function categoryForProgram(program){
+    if(program===undefined || program===null) return 'Keys';
+    if(program<8) return 'Keys';
+    if(program<16) return 'Plucks';
+    if(program<24) return 'Keys';
+    if(program<32) return 'Plucks';
+    if(program<40) return 'Bass';
+    if(program<48) return 'Pads & Strings';
+    if(program<56) return 'Pads & Strings';
+    if(program<64) return 'Wind & Brass';
+    if(program<72) return 'Wind & Brass';
+    if(program<80) return 'Wind & Brass';
+    if(program<88) return 'Leads';
+    if(program<96) return 'Pads & Strings';
+    if(program<104) return 'FX & Chip';
+    if(program<112) return 'World Melodic';
+    if(program<120) return 'Plucks';
+    return 'FX & Chip';
+  }
+  function instrumentForProgram(program){
+    const cat = categoryForProgram(program);
+    const list = MELODIC_INSTRUMENTS.filter(i=>i.cat===cat);
+    return list[0] || MELODIC_INSTRUMENTS[0];
+  }
+  function nearestDrumInstId(midiNote){
+    let best = DRUM_INSTRUMENTS[0].id, bd = 999;
+    DRUM_INSTRUMENTS.forEach(inst=>{
+      const mapped = DRUM_MIDI_MAP[inst.id];
+      const d = Math.abs(mapped - midiNote);
+      if(d < bd){ bd = d; best = inst.id; }
+    });
+    return best;
   }
   function nearestNoteIndex(midiNote){
     let bestIdx=0, bestDist=999;
@@ -1292,39 +1331,82 @@
   async function importMIDI(file){
     try{
       const buf = await file.arrayBuffer();
-      const { division, noteOnEvents } = parseMidiFile(buf);
+      const { division, noteOnEvents, programChanges } = parseMidiFile(buf);
+      if(noteOnEvents.length===0){ setStatus('No notes found in that MIDI file.'); return; }
       const stepTicks = division/4;
-      const songTicks = totalSteps*stepTicks;
-      tracks.forEach(t=> t.pattern.fill(t.kind==='drum' ? false : null));
-      const drumTracks = tracks.filter(t=>t.kind==='drum');
-      const melodicTracks = tracks.filter(t=>t.kind==='melodic');
-      const channelToMelodicTrack = {};
-      let mi = 0;
+
+      // 1) Auto-size the bar count to fit the imported song
+      let maxTick = 0;
+      noteOnEvents.forEach(ev=>{ if(ev.tick > maxTick) maxTick = ev.tick; });
+      const neededSteps = Math.max(STEP_PER_BAR, Math.ceil((maxTick + stepTicks) / stepTicks));
+      const neededBars = Math.max(1, Math.ceil(neededSteps / STEP_PER_BAR));
+      bars = neededBars;
+      totalSteps = bars * STEP_PER_BAR;
+
+      // 2) Work out which drum instruments & melodic channels the file needs
+      const neededDrumInstIds = new Set();
+      noteOnEvents.forEach(ev=>{ if(ev.channel===9) neededDrumInstIds.add(nearestDrumInstId(ev.note)); });
+      const neededChannels = Array.from(new Set(noteOnEvents.filter(ev=>ev.channel!==9).map(ev=>ev.channel))).sort((a,b)=>a-b);
+
+      // 3) Reuse existing matching tracks where possible, auto-add the rest
+      let addedCount = 0;
+      const drumInstIdToTrack = {};
+      tracks.filter(t=>t.kind==='drum').forEach(t=>{
+        if(neededDrumInstIds.has(t.instId) && !drumInstIdToTrack[t.instId]) drumInstIdToTrack[t.instId] = t;
+      });
+      neededDrumInstIds.forEach(instId=>{
+        if(!drumInstIdToTrack[instId]){
+          const inst = INSTRUMENTS_BY_ID[instId];
+          if(inst){
+            const t = newTrackFromInstrument(inst);
+            tracks.push(t);
+            drumInstIdToTrack[instId] = t;
+            addedCount++;
+          }
+        }
+      });
+
+      const existingMelodic = tracks.filter(t=>t.kind==='melodic');
+      const channelToTrack = {};
+      let reuseIdx = 0;
+      neededChannels.forEach(ch=>{
+        if(reuseIdx < existingMelodic.length){
+          channelToTrack[ch] = existingMelodic[reuseIdx];
+          reuseIdx++;
+        } else {
+          const inst = instrumentForProgram(programChanges[ch]);
+          const t = newTrackFromInstrument(inst);
+          tracks.push(t);
+          channelToTrack[ch] = t;
+          addedCount++;
+        }
+      });
+
+      // 4) Resize every track's pattern to the new song length and clear it
+      tracks.forEach(t=>{
+        const fill = t.kind==='drum' ? false : null;
+        t.pattern = new Array(totalSteps).fill(fill);
+      });
+
+      // 5) Place the notes
       let placed = 0;
+      const songTicks = totalSteps * stepTicks;
       noteOnEvents.forEach(ev=>{
         if(ev.tick >= songTicks) return;
         const step = Math.min(totalSteps-1, Math.round(ev.tick/stepTicks));
         if(ev.channel === 9){
-          if(drumTracks.length===0) return;
-          let best=null, bd=999;
-          drumTracks.forEach(t=>{
-            const mapped = DRUM_MIDI_MAP[t.instId] !== undefined ? DRUM_MIDI_MAP[t.instId] : 37;
-            const d=Math.abs(mapped-ev.note); if(d<bd){bd=d; best=t;}
-          });
-          if(best){ best.pattern[step]=true; placed++; }
+          const track = drumInstIdToTrack[nearestDrumInstId(ev.note)];
+          if(track){ track.pattern[step] = true; placed++; }
         } else {
-          if(melodicTracks.length===0) return;
-          if(channelToMelodicTrack[ev.channel]===undefined){
-            channelToMelodicTrack[ev.channel] = melodicTracks[mi % melodicTracks.length];
-            mi++;
-          }
-          const track = channelToMelodicTrack[ev.channel];
-          track.pattern[step] = nearestNoteIndex(ev.note);
-          placed++;
+          const track = channelToTrack[ev.channel];
+          if(track){ track.pattern[step] = nearestNoteIndex(ev.note); placed++; }
         }
       });
+
       refreshAllUI();
-      setStatus(placed>0 ? 'MIDI imported into existing tracks.' : 'No usable notes found, or no matching tracks exist.');
+      let msg = 'MIDI imported — ' + bars + (bars===1?' bar':' bars');
+      if(addedCount>0) msg += ', added ' + addedCount + ' instrument track' + (addedCount===1?'':'s') + ' automatically.';
+      setStatus(placed>0 ? msg : 'MIDI file had no usable note data.');
     }catch(err){ setStatus('Could not read that MIDI file.'); }
   }
   document.getElementById('importMidiBtn').onclick = ()=> document.getElementById('midiFileInput').click();
