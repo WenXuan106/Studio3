@@ -1030,15 +1030,17 @@
   }
   let uiStep = 0;
   function scheduleStep(step, time){
+    // Compute solo-state once per step instead of once per melodic track
+    // (that inner tracks.some() re-scan was O(tracks^2) per step).
+    const anySolo = tracks.some(t=>t.solo);
     tracks.forEach(track=>{
+      if(track.mute) return;
+      if(anySolo && !track.solo) return;
       const val = track.pattern[step];
       if(track.kind === 'drum'){
         if(val) triggerTrackAudio(track, time);
       } else if(track.kind === 'melodic'){
         if(val !== null && val !== undefined){
-          if(track.mute) return;
-          const anySolo = tracks.some(t=>t.solo);
-          if(anySolo && !track.solo) return;
           const inst = INSTRUMENTS_BY_ID[track.instId];
           if(inst) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
         }
@@ -1047,10 +1049,20 @@
     const delay = (time - audioCtx.currentTime)*1000;
     setTimeout(()=>{ uiStep = step; updatePlayhead(); }, Math.max(0,delay));
   }
+  // Only touch the handful of cells at the previous/current step column instead
+  // of re-scanning every step/cell in the whole document on every tick — that
+  // full-page rescan is what bogs down (and can freeze) once there are a lot
+  // of tracks, especially on less powerful devices like iPad.
+  let lastUiStep = -1;
   function updatePlayhead(){
-    document.querySelectorAll('.step, .cell').forEach(el=>{
-      el.classList.toggle('playhead', parseInt(el.dataset.step,10)===uiStep);
-    });
+    if(lastUiStep === uiStep) return;
+    if(lastUiStep >= 0){
+      document.querySelectorAll(`.step[data-step="${lastUiStep}"], .cell[data-step="${lastUiStep}"]`)
+        .forEach(el=>el.classList.remove('playhead'));
+    }
+    document.querySelectorAll(`.step[data-step="${uiStep}"], .cell[data-step="${uiStep}"]`)
+      .forEach(el=>el.classList.add('playhead'));
+    lastUiStep = uiStep;
     document.querySelectorAll('#stepIndicator span').forEach((el,i)=>{
       el.classList.toggle('on', i===uiStep);
     });
@@ -1068,6 +1080,7 @@
     document.getElementById('playBtn').classList.remove('playing');
     document.querySelectorAll('.playhead').forEach(el=>el.classList.remove('playhead'));
     document.querySelectorAll('#stepIndicator span').forEach(el=>el.classList.remove('on'));
+    lastUiStep = -1;
   }
 
   // ============================================================
