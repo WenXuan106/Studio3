@@ -185,10 +185,16 @@
   .roll-key.black-k{ background:#221d19; color:#8a8072; }
   .roll-key.c-note{ background: var(--amber); color:#1a1300; font-weight:700; }
 
-  .cell{ width:20px; height:18px; border-radius:3px; background: var(--step-off); cursor:pointer; flex-shrink:0; margin:1px 0 0 0; }
+  .cell{ width:20px; height:18px; border-radius:3px; background: var(--step-off); cursor:pointer; flex-shrink:0; margin:1px 0 0 0; touch-action:none; user-select:none; }
   .cell.beat3{ background: var(--step-off-hi); }
   .cell.barstart{ border-left:1px solid #3a332d; }
-  .cell.active{ background: var(--teal); box-shadow: 0 0 6px rgba(45,212,191,.4); border:1px solid #0a6b60; border-radius:4px; }
+  /* Active cells merge into one continuous GarageBand-style note block when consecutive steps share a note */
+  .cell.active{ background: var(--teal); border-top:1px solid #0a6b60; border-bottom:1px solid #0a6b60; border-radius:0; box-shadow:none; }
+  .cell.active:not(.run-start){ border-left:none; }
+  .cell.active:not(.run-end){ border-right:none; }
+  .cell.active.run-start{ border-radius:4px 0 0 4px; border-left:1px solid #0a6b60; box-shadow: -1px 0 6px rgba(45,212,191,.4); }
+  .cell.active.run-end{ border-radius:0 4px 4px 0; border-right:1px solid #0a6b60; box-shadow: 1px 0 6px rgba(45,212,191,.4); }
+  .cell.active.run-start.run-end{ border-radius:4px; box-shadow: 0 0 6px rgba(45,212,191,.4); }
   .roll-editor-close{ float:right; }
 
   .mixer-grid{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
@@ -402,6 +408,34 @@
     {id:'metalPerc', name:'Metal Perc', cat:'Electronic Percussion', kind:'drum', engine:'metallic', freqs:[1900,2600,3300], wave:'square', decay:0.3, mix:0.15, vol:0.4},
     {id:'glitchPerc', name:'Glitch Perc', cat:'Electronic Percussion', kind:'drum', engine:'click', freq:3200, decay:0.03, wave:'square', vol:0.5},
     {id:'fmPerc', name:'FM Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sine', freq:600, freqEnd:1200, decay:0.08, vol:0.5},
+
+    // Kicks (more)
+    {id:'kickReverse', name:'Reverse Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:40, freqEnd:150, decay:0.35, vol:0.7},
+    {id:'kickDistorted', name:'Distorted Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'square', freq:150, freqEnd:38, decay:0.28, vol:0.9},
+
+    // Snares & Claps (more)
+    {id:'snareGated', name:'Gated Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:190, toneDecay:0.05, noiseFreq:1100, noiseDecay:0.08, vol:0.85},
+    {id:'snare808', name:'808 Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:220, toneDecay:0.16, noiseFreq:1300, noiseDecay:0.2, vol:0.8},
+
+    // Hats & Cymbals (more)
+    {id:'hatVinyl', name:'Vinyl Hat', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:6500, q:0.6, decay:0.05, vol:0.5},
+    {id:'shakerHat', name:'Shaker Hat', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:6000, q:1, decay:0.12, vol:0.4},
+    {id:'cymbalSwell', name:'Cymbal Swell', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:3500, q:0.3, decay:1.6, vol:0.5},
+
+    // Toms & Drums (more)
+    {id:'rototom', name:'Rototom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'triangle', freq:250, freqEnd:150, decay:0.2, vol:0.65},
+    {id:'timbaleTom', name:'Timbale Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:300, freqEnd:200, decay:0.18, vol:0.6},
+
+    // World Percussion (more)
+    {id:'shaker', name:'Shaker', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:7000, q:0.9, decay:0.1, vol:0.4},
+    {id:'castanets', name:'Castanets', cat:'World Percussion', kind:'drum', engine:'click', freq:3000, decay:0.05, wave:'square', vol:0.5},
+    {id:'cuica', name:'Cuica', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sawtooth', freq:300, freqEnd:150, decay:0.3, vol:0.5},
+    {id:'talkingDrum', name:'Talking Drum', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:250, freqEnd:400, decay:0.22, vol:0.6},
+
+    // Electronic Percussion (more)
+    {id:'reverseCymbal', name:'Reverse Cymbal', cat:'Electronic Percussion', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:2500, q:0.3, decay:1.2, vol:0.4},
+    {id:'subPerc', name:'Sub Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sine', freq:90, freqEnd:30, decay:0.2, vol:0.6},
+    {id:'arcadeBlip', name:'Arcade Blip', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:2000, freqEnd:1500, decay:0.05, vol:0.45},
   ];
 
   const MELODIC_INSTRUMENTS = [
@@ -490,6 +524,54 @@
     {id:'padVoicesAngelic', name:'Angelic Voices', cat:'Pads & Strings', kind:'melodic', wave:'sine', unison:[-5,0,5,12], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.35, durBeats:2.6, vol:0.35},
     {id:'leadSquareSoft', name:'Soft Square Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:1800, attack:0.03, durBeats:0.95, vol:0.4},
     {id:'bassFMDeep', name:'Deep FM Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0,1,2], sub:0.25, subMix:0.5, filterType:'lowpass', filterFreq:450, attack:0.01, durBeats:1.0, vol:0.6},
+
+    // Keys (more)
+    {id:'rhodesMellow', name:'Rhodes Mellow', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,-12], sub:0.5, subMix:0.25, filterType:'lowpass', filterFreq:2000, attack:0.01, durBeats:1.5, vol:0.55},
+    {id:'wurlitzer', name:'Wurlitzer', cat:'Keys', kind:'melodic', wave:'triangle', unison:[0,7], sub:0.5, subMix:0.15, filterType:'lowpass', filterFreq:2400, attack:0.008, durBeats:1.2, vol:0.5},
+    {id:'toyPiano', name:'Toy Piano', cat:'Keys', kind:'melodic', wave:'square', unison:[0,24], sub:0, filterType:'lowpass', filterFreq:5000, attack:0.001, pluck:true, decayTime:0.6, vol:0.4},
+
+    // Bass (more)
+    {id:'pickBass', name:'Pick Bass', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:1400, attack:0.002, durBeats:0.5, vol:0.6},
+    {id:'uprightBass', name:'Upright Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0], sub:0.5, subMix:0.5, filterType:'lowpass', filterFreq:600, attack:0.02, durBeats:0.9, vol:0.6},
+    {id:'funkBass', name:'Funk Bass', cat:'Bass', kind:'melodic', wave:'square', unison:[0], sub:0.5, subMix:0.35, filterType:'bandpass', filterFreq:900, filterQ:2.5, attack:0.001, durBeats:0.4, vol:0.6},
+
+    // Leads (more)
+    {id:'hooverLead', name:'Hoover Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[-14,0,14], sub:0, filterType:'lowpass', filterFreq:3000, attack:0.02, durBeats:0.9, vibratoRate:5, vibratoDepth:6, vol:0.4},
+    {id:'chiptuneLead2', name:'Chiptune Lead 2', cat:'Leads', kind:'melodic', wave:'square', unison:[0,12], sub:0, attack:0.001, durBeats:0.5, vol:0.4},
+    {id:'ravePluckLead', name:'Rave Pluck', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0,7], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.001, pluck:true, decayTime:0.3, vol:0.45},
+
+    // Plucks (more)
+    {id:'banjo', name:'Banjo', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,12], sub:0, filterType:'highpass', filterFreq:400, attack:0.001, pluck:true, decayTime:0.4, vol:0.5},
+    {id:'ukulele', name:'Ukulele', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,7], sub:0, attack:0.001, pluck:true, decayTime:0.5, vol:0.5},
+    {id:'mandolin', name:'Mandolin', cat:'Plucks', kind:'melodic', wave:'sawtooth', unison:[0,12,19], sub:0, filterType:'highpass', filterFreq:500, attack:0.001, pluck:true, decayTime:0.35, vol:0.45},
+
+    // Pads & Strings (more)
+    {id:'cinematicPad', name:'Cinematic Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-9,0,9,16], sub:0.5, subMix:0.25, filterType:'lowpass', filterFreq:1400, attack:0.5, durBeats:3.2, vol:0.35},
+    {id:'darkPad', name:'Dark Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-5,0,5], sub:0.25, subMix:0.4, filterType:'lowpass', filterFreq:900, attack:0.4, durBeats:2.8, vol:0.35},
+    {id:'violinSection', name:'Violin Section', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-3,0,3], sub:0, filterType:'bandpass', filterFreq:2200, filterQ:1.5, attack:0.1, durBeats:1.6, vibratoRate:5, vibratoDepth:4, vol:0.45},
+    {id:'celloSection', name:'Cello Section', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-3,0,3], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:1200, attack:0.12, durBeats:1.8, vibratoRate:4, vibratoDepth:3, vol:0.5},
+
+    // Wind & Brass (more)
+    {id:'bassoonSynth', name:'Bassoon Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.3, filterType:'bandpass', filterFreq:900, filterQ:2, attack:0.05, durBeats:1.2, vol:0.5},
+    {id:'tromboneSynth', name:'Trombone Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.25, subMix:0.2, filterType:'bandpass', filterFreq:1300, filterQ:2, attack:0.06, durBeats:1.1, vol:0.5},
+
+    // World Melodic (more)
+    {id:'koto', name:'Koto', cat:'World Melodic', kind:'melodic', wave:'triangle', unison:[0,7], sub:0, attack:0.001, pluck:true, decayTime:0.7, vol:0.5},
+    {id:'shamisen', name:'Shamisen', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0,12], sub:0, filterType:'highpass', filterFreq:600, attack:0.001, pluck:true, decayTime:0.4, vol:0.45},
+    {id:'panFlute', name:'Pan Flute', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.08, durBeats:1.3, vibratoRate:5, vibratoDepth:4, vol:0.45},
+
+    // FX & Chip (more)
+    {id:'uiBlip', name:'UI Blip', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0], sub:0, attack:0.001, durBeats:0.25, vol:0.35},
+    {id:'alarmFX', name:'Alarm FX', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0,1], sub:0, filterType:'bandpass', filterFreq:1800, filterQ:4, attack:0.01, durBeats:0.6, vibratoRate:8, vibratoDepth:10, vol:0.4},
+    {id:'risePad', name:'Rise FX', cat:'FX & Chip', kind:'melodic', wave:'sawtooth', unison:[-12,0,12], sub:0, filterType:'lowpass', filterFreq:1000, attack:0.9, durBeats:3.5, vol:0.35},
+
+    // Guitars (new category)
+    {id:'acousticGuitar', name:'Acoustic Guitar', cat:'Guitars', kind:'melodic', wave:'triangle', unison:[0,12], sub:0, filterType:'lowpass', filterFreq:3200, attack:0.001, pluck:true, decayTime:0.9, vol:0.5},
+    {id:'nylonGuitar', name:'Nylon Guitar', cat:'Guitars', kind:'melodic', wave:'sine', unison:[0,7], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.002, pluck:true, decayTime:0.8, vol:0.5},
+    {id:'electricGuitarClean', name:'Electric Guitar Clean', cat:'Guitars', kind:'melodic', wave:'triangle', unison:[0], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.002, pluck:true, decayTime:0.6, vol:0.5},
+    {id:'electricGuitarMuted', name:'Electric Guitar Muted', cat:'Guitars', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:1200, attack:0.001, pluck:true, decayTime:0.15, vol:0.5},
+    {id:'distortionGuitar', name:'Distortion Guitar', cat:'Guitars', kind:'melodic', wave:'square', unison:[-5,0,5], sub:0, filterType:'bandpass', filterFreq:1500, filterQ:3, attack:0.001, durBeats:0.6, vol:0.45},
+    {id:'guitarHarmonics', name:'Guitar Harmonics', cat:'Guitars', kind:'melodic', wave:'sine', unison:[0,24,31], sub:0, attack:0.001, pluck:true, decayTime:1.1, vol:0.4},
   ];
 
   const INSTRUMENTS = DRUM_INSTRUMENTS.concat(MELODIC_INSTRUMENTS);
@@ -497,14 +579,14 @@
   INSTRUMENTS.forEach(inst => { INSTRUMENTS_BY_ID[inst.id] = inst; });
   const CATEGORY_ORDER = [
     'Kicks','Snares & Claps','Hats & Cymbals','Toms & Drums','World Percussion','Electronic Percussion',
-    'Keys','Bass','Leads','Plucks','Pads & Strings','Wind & Brass','World Melodic','FX & Chip'
+    'Keys','Bass','Guitars','Leads','Plucks','Pads & Strings','Wind & Brass','World Melodic','FX & Chip'
   ];
 
   // Auto-assign GM-ish MIDI note / program numbers for export
   const DRUM_MIDI_MAP = {};
   DRUM_INSTRUMENTS.forEach((inst, i) => { DRUM_MIDI_MAP[inst.id] = 35 + (i % 46); });
   const CATEGORY_PROGRAM = {
-    'Keys':0, 'Bass':38, 'Leads':81, 'Plucks':45, 'Pads & Strings':89,
+    'Keys':0, 'Bass':38, 'Guitars':25, 'Leads':81, 'Plucks':45, 'Pads & Strings':89,
     'Wind & Brass':61, 'World Melodic':104, 'FX & Chip':99
   };
 
@@ -934,13 +1016,20 @@
         const cell = document.createElement('div');
         cell.className = 'cell' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
         cell.dataset.step = i; cell.dataset.note = ni;
-        if(track.pattern[i]===ni) cell.classList.add('active');
-        cell.onclick = ()=>{
+        if(track.pattern[i]===ni){
+          cell.classList.add('active');
+          if(track.pattern[i-1]!==ni) cell.classList.add('run-start');
+          if(track.pattern[i+1]!==ni) cell.classList.add('run-end');
+        }
+        cell.onpointerdown = (e)=>{
+          e.preventDefault();
           const wasActive = track.pattern[i]===ni;
-          wrap.querySelectorAll(`.cell[data-step="${i}"]`).forEach(c=>c.classList.remove('active'));
-          track.pattern[i] = wasActive ? null : ni;
-          if(!wasActive){
-            cell.classList.add('active'); ensureAudio();
+          const mode = wasActive ? 'erase' : 'paint';
+          rollDrag = { track, wrap, ni, mode, lastStep:null };
+          paintRollCell(i, ni, track, wrap, mode);
+          refreshRollRowMerge(wrap, track, ni);
+          if(mode==='paint'){
+            ensureAudio();
             const inst = INSTRUMENTS_BY_ID[track.instId];
             playMelodicInstrument(audioCtx.currentTime+0.02, noteFreq(note), inst, track.vol);
           }
@@ -957,6 +1046,46 @@
     const middleIndex = NOTE_RANGE.indexOf('C4');
     if(middleIndex>=0){ scrollEl.scrollTop = Math.max(0, middleIndex*19 - 160); }
   }
+  // Click-and-drag note painting, GarageBand-style: mousedown/touch on an empty
+  // step starts "paint" (drag across steps to draw one long note); starting on
+  // an already-active step starts "erase" (drag to clear a whole block at once).
+  let rollDrag = null;
+  function paintRollCell(step, ni, track, wrap, mode){
+    if(step<0 || step>=totalSteps) return;
+    const cur = track.pattern[step];
+    if(mode==='erase'){
+      if(cur===ni) track.pattern[step] = null;
+    } else {
+      if(cur!==ni) track.pattern[step] = ni;
+    }
+    // A step can only hold one note per track, so refresh every row in this column
+    wrap.querySelectorAll(`.cell[data-step="${step}"]`).forEach(c=>{
+      const cNi = Number(c.dataset.note);
+      c.classList.toggle('active', track.pattern[step]===cNi);
+    });
+  }
+  function refreshRollRowMerge(wrap, track, ni){
+    wrap.querySelectorAll(`.cell[data-note="${ni}"]`).forEach(c=>{
+      const i = Number(c.dataset.step);
+      const active = track.pattern[i]===ni;
+      c.classList.toggle('active', active);
+      c.classList.toggle('run-start', active && track.pattern[i-1]!==ni);
+      c.classList.toggle('run-end', active && track.pattern[i+1]!==ni);
+    });
+  }
+  document.addEventListener('pointermove', (e)=>{
+    if(!rollDrag) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if(!el || !el.classList || !el.classList.contains('cell')) return;
+    if(Number(el.dataset.note) !== rollDrag.ni) return; // stay within the row the drag started on
+    const step = Number(el.dataset.step);
+    if(step === rollDrag.lastStep) return;
+    rollDrag.lastStep = step;
+    paintRollCell(step, rollDrag.ni, rollDrag.track, rollDrag.wrap, rollDrag.mode);
+    refreshRollRowMerge(rollDrag.wrap, rollDrag.track, rollDrag.ni);
+  });
+  document.addEventListener('pointerup', ()=>{ if(rollDrag){ rollDrag=null; buildTrackList(); } });
+  document.addEventListener('pointercancel', ()=>{ if(rollDrag){ rollDrag=null; buildTrackList(); } });
   function scrollRollToStep(step){
     const scrollEl = document.getElementById('rollScroll');
     const cell = scrollEl.querySelector(`.cell[data-step="${step}"]`);
