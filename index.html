@@ -1708,7 +1708,24 @@
         });
       }
 
+      // Report progress: schedule suspend/resume checkpoints through the render
+      // so the button and status can show a live percentage as it renders.
+      const showProgress = (pct)=>{
+        setStatus('Rendering audio… ' + pct + '%');
+        btn.textContent = 'Rendering ' + pct + '%…';
+      };
+      showProgress(0);
+      const numCheckpoints = 20;
+      for(let c=1; c<numCheckpoints; c++){
+        const checkTime = duration * c / numCheckpoints;
+        offlineCtx.suspend(checkTime).then(()=>{
+          showProgress(Math.round(c/numCheckpoints*100));
+          offlineCtx.resume();
+        });
+      }
+
       const rendered = await offlineCtx.startRendering();
+      showProgress(100);
       const blob = audioBufferToWavBlob(rendered);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
