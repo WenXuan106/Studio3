@@ -436,6 +436,84 @@
     {id:'reverseCymbal', name:'Reverse Cymbal', cat:'Electronic Percussion', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:2500, q:0.3, decay:1.2, vol:0.4},
     {id:'subPerc', name:'Sub Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sine', freq:90, freqEnd:30, decay:0.2, vol:0.6},
     {id:'arcadeBlip', name:'Arcade Blip', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:2000, freqEnd:1500, decay:0.05, vol:0.45},
+
+    // Kicks (round 3)
+    {id:'kick909', name:'909 Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:170, freqEnd:52, decay:0.24, vol:0.9},
+    {id:'kickTightSub', name:'Tight Sub Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:80, freqEnd:35, decay:0.16, vol:0.8},
+
+    // Snares & Claps (round 3)
+    {id:'snareRock', name:'Rock Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:210, toneDecay:0.15, noiseFreq:1400, noiseDecay:0.25, vol:0.85},
+    {id:'snareFunk', name:'Funk Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:230, toneDecay:0.07, noiseFreq:1500, noiseDecay:0.1, vol:0.75},
+
+    // Hats & Cymbals (round 3)
+    {id:'hatDisco', name:'Disco Hat', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:8000, q:0.5, decay:0.08, vol:0.55},
+    {id:'splashTight', name:'Splash Tight', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:6000, q:0.6, decay:0.2, vol:0.4},
+
+    // Toms & Drums (round 3)
+    {id:'tomElectronic', name:'Electronic Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'square', freq:220, freqEnd:100, decay:0.22, vol:0.65},
+    {id:'tribalTom', name:'Tribal Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:130, freqEnd:80, decay:0.3, vol:0.7},
+
+    // World Percussion (round 3)
+    {id:'bataDrum', name:'Bata Drum', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:200, freqEnd:120, decay:0.16, vol:0.65},
+    {id:'frameDrum', name:'Frame Drum', cat:'World Percussion', kind:'drum', engine:'tonenoise', toneFreq:140, toneDecay:0.2, noiseFreq:900, noiseDecay:0.15, vol:0.6},
+    {id:'rainstick', name:'Rainstick', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:4000, q:0.5, decay:0.9, vol:0.35},
+
+    // Electronic Percussion (round 3)
+    {id:'bitcrushPerc', name:'Bitcrush Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:900, freqEnd:300, decay:0.1, vol:0.5},
+    {id:'sweepPerc', name:'Sweep Perc', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sawtooth', freq:300, freqEnd:2400, decay:0.2, vol:0.45},
+    {id:'pingPerc', name:'Ping Perc', cat:'Electronic Percussion', kind:'drum', engine:'metallic', freqs:[3200,4700], wave:'sine', decay:0.35, mix:0.25, vol:0.4},
+
+    // Kicks (round 4)
+    {id:'kickAmapiano', name:'Amapiano Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:110, freqEnd:38, decay:0.6, vol:0.75},
+    {id:'kickClicky', name:'Clicky Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'triangle', freq:200, freqEnd:60, decay:0.14, vol:0.85},
+
+    // Snares & Claps (round 4)
+    {id:'snareDrill', name:'Drill Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:170, toneDecay:0.1, noiseFreq:900, noiseDecay:0.3, vol:0.8},
+    {id:'clapTrap808', name:'808 Clap', cat:'Snares & Claps', kind:'drum', engine:'clap', repeats:6, spacing:0.009, filterFreq:1400, decay:0.18, vol:0.65},
+
+    // Hats & Cymbals (round 4)
+    {id:'hatRollTight', name:'Hat Roll Tight', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:9000, q:0.7, decay:0.03, vol:0.5},
+    {id:'crashDark', name:'Dark Crash', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:2800, q:0.4, decay:1.4, vol:0.5},
+
+    // Toms & Drums (round 4)
+    {id:'tomPiccolo', name:'Piccolo Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:340, freqEnd:220, decay:0.16, vol:0.6},
+    {id:'gongLow', name:'Low Gong', cat:'Toms & Drums', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:400, q:1.2, decay:1.8, vol:0.55},
+
+    // World Percussion (round 4)
+    {id:'udu', name:'Udu', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:150, freqEnd:90, decay:0.2, vol:0.6},
+    {id:'ganza', name:'Ganza', cat:'World Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:6500, q:0.8, decay:0.14, vol:0.4},
+    {id:'djembeSlap', name:'Djembe Slap', cat:'World Percussion', kind:'drum', engine:'tonenoise', toneFreq:300, toneDecay:0.06, noiseFreq:2200, noiseDecay:0.1, vol:0.65},
+
+    // Electronic Percussion (round 4)
+    {id:'noiseHit808', name:'808 Noise Hit', cat:'Electronic Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:1800, q:0.7, decay:0.12, vol:0.5},
+    {id:'stutterZap', name:'Stutter Zap', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:1400, freqEnd:2200, decay:0.06, vol:0.5},
+    {id:'downlifter', name:'Downlifter', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'sawtooth', freq:1200, freqEnd:60, decay:0.5, vol:0.5},
+
+    // Kicks (round 5)
+    {id:'kickDeepHouse', name:'Deep House Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'sine', freq:145, freqEnd:44, decay:0.32, vol:0.85},
+    {id:'kickDubstep', name:'Dubstep Kick', cat:'Kicks', kind:'drum', engine:'tone', wave:'triangle', freq:190, freqEnd:32, decay:0.4, vol:0.9},
+
+    // Snares & Claps (round 5)
+    {id:'snareIndustrial', name:'Industrial Snare', cat:'Snares & Claps', kind:'drum', engine:'tonenoise', toneFreq:160, toneDecay:0.18, noiseFreq:1000, noiseDecay:0.35, vol:0.85},
+    {id:'clapVintage', name:'Vintage Clap', cat:'Snares & Claps', kind:'drum', engine:'clap', repeats:3, spacing:0.016, filterFreq:900, decay:0.12, vol:0.6},
+
+    // Hats & Cymbals (round 5)
+    {id:'hatMetallic', name:'Metallic Hat', cat:'Hats & Cymbals', kind:'drum', engine:'metallic', freqs:[6000,8200,10500], wave:'square', decay:0.07, mix:0.1, vol:0.4},
+    {id:'crashBright', name:'Bright Crash', cat:'Hats & Cymbals', kind:'drum', engine:'noise', filterType:'highpass', filterFreq:5500, q:0.4, decay:1.0, vol:0.5},
+
+    // Toms & Drums (round 5)
+    {id:'tomDeep', name:'Deep Tom', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:95, freqEnd:60, decay:0.4, vol:0.7},
+    {id:'timpani', name:'Timpani', cat:'Toms & Drums', kind:'drum', engine:'tone', wave:'sine', freq:130, freqEnd:100, decay:0.6, vol:0.7},
+
+    // World Percussion (round 5)
+    {id:'tablaNa', name:'Tabla Na', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:280, freqEnd:220, decay:0.12, vol:0.6},
+    {id:'tablaGe', name:'Tabla Ge', cat:'World Percussion', kind:'drum', engine:'tone', wave:'sine', freq:110, freqEnd:70, decay:0.18, vol:0.65},
+    {id:'sleighBells', name:'Sleigh Bells', cat:'World Percussion', kind:'drum', engine:'metallic', freqs:[3800,5200,6600], wave:'square', decay:0.25, mix:0.1, vol:0.4},
+
+    // Electronic Percussion (round 5)
+    {id:'digiClick', name:'Digi Click', cat:'Electronic Percussion', kind:'drum', engine:'click', freq:1600, decay:0.02, wave:'square', vol:0.5},
+    {id:'formantHit', name:'Formant Hit', cat:'Electronic Percussion', kind:'drum', engine:'noise', filterType:'bandpass', filterFreq:1400, q:2, decay:0.15, vol:0.5},
+    {id:'risingBleep', name:'Rising Bleep', cat:'Electronic Percussion', kind:'drum', engine:'tone', wave:'square', freq:400, freqEnd:2400, decay:0.12, vol:0.45},
   ];
 
   const MELODIC_INSTRUMENTS = [
@@ -572,6 +650,151 @@
     {id:'electricGuitarMuted', name:'Electric Guitar Muted', cat:'Guitars', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:1200, attack:0.001, pluck:true, decayTime:0.15, vol:0.5},
     {id:'distortionGuitar', name:'Distortion Guitar', cat:'Guitars', kind:'melodic', wave:'square', unison:[-5,0,5], sub:0, filterType:'bandpass', filterFreq:1500, filterQ:3, attack:0.001, durBeats:0.6, vol:0.45},
     {id:'guitarHarmonics', name:'Guitar Harmonics', cat:'Guitars', kind:'melodic', wave:'sine', unison:[0,24,31], sub:0, attack:0.001, pluck:true, decayTime:1.1, vol:0.4},
+
+    // Keys (round 3)
+    {id:'dxElectricPiano', name:'DX Electric Piano', cat:'Keys', kind:'melodic', wave:'sine', unison:[0,12,19], sub:0, filterType:'lowpass', filterFreq:3000, attack:0.003, pluck:true, decayTime:1.0, vol:0.5},
+    {id:'honkyTonkPiano', name:'Honky-Tonk Piano', cat:'Keys', kind:'melodic', wave:'triangle', unison:[-6,0,6], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:3400, attack:0.004, durBeats:1.0, vol:0.55},
+    {id:'accordion', name:'Accordion', cat:'Keys', kind:'melodic', wave:'sawtooth', unison:[0,7], sub:0, filterType:'bandpass', filterFreq:1600, filterQ:1.5, attack:0.03, durBeats:1.4, vibratoRate:5, vibratoDepth:3, vol:0.45},
+
+    // Bass (round 3)
+    {id:'fifthBassStab', name:'5th Bass Stab', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[0,7], sub:0.5, subMix:0.35, filterType:'lowpass', filterFreq:1000, attack:0.001, durBeats:0.3, vol:0.6},
+    {id:'rubberBass', name:'Rubber Bass', cat:'Bass', kind:'melodic', wave:'triangle', unison:[0], sub:0.5, subMix:0.5, filterType:'lowpass', filterFreq:700, filterQ:1.5, attack:0.008, durBeats:0.7, vol:0.6},
+
+    // Guitars (round 3)
+    {id:'twelveStringGuitar', name:'12-String Guitar', cat:'Guitars', kind:'melodic', wave:'triangle', unison:[0,12,19], sub:0, filterType:'lowpass', filterFreq:3400, attack:0.001, pluck:true, decayTime:1.0, vol:0.45},
+    {id:'guitarPalmMute', name:'Palm Mute Guitar', cat:'Guitars', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'lowpass', filterFreq:900, attack:0.001, pluck:true, decayTime:0.1, vol:0.55},
+    {id:'ambientGuitar', name:'Ambient Guitar', cat:'Guitars', kind:'melodic', wave:'sine', unison:[0,7,12], sub:0, filterType:'lowpass', filterFreq:2400, attack:0.02, pluck:true, decayTime:1.8, vol:0.4},
+
+    // Leads (round 3)
+    {id:'detunedSawLead', name:'Detuned Saw Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[-6,0,6], sub:0, filterType:'lowpass', filterFreq:3000, attack:0.008, durBeats:0.9, vol:0.45},
+    {id:'sineLead', name:'Sine Lead', cat:'Leads', kind:'melodic', wave:'sine', unison:[0], sub:0, attack:0.005, durBeats:0.9, vol:0.45},
+    {id:'formantLead', name:'Formant Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1600, filterQ:5, attack:0.01, durBeats:0.9, vol:0.4},
+
+    // Plucks (round 3)
+    {id:'harpGliss', name:'Harp Gliss', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,19], sub:0, attack:0.001, pluck:true, decayTime:1.1, vol:0.45},
+    {id:'autoharp', name:'Autoharp', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,7,12], sub:0, filterType:'highpass', filterFreq:500, attack:0.001, pluck:true, decayTime:0.7, vol:0.4},
+
+    // Pads & Strings (round 3)
+    {id:'shimmerPad', name:'Shimmer Pad', cat:'Pads & Strings', kind:'melodic', wave:'sine', unison:[0,12,19,24], sub:0, filterType:'lowpass', filterFreq:4500, attack:0.4, durBeats:2.8, vol:0.3},
+    {id:'orchestralPad', name:'Orchestral Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-7,-3,0,4,7], sub:0.25, subMix:0.25, filterType:'lowpass', filterFreq:1700, attack:0.3, durBeats:2.6, vol:0.35},
+
+    // Wind & Brass (round 3)
+    {id:'harmonicaSynth', name:'Harmonica Synth', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:2000, filterQ:2.5, attack:0.02, durBeats:0.9, vibratoRate:6, vibratoDepth:5, vol:0.45},
+    {id:'bagpipeChanter', name:'Bagpipe Chanter', cat:'Wind & Brass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1800, filterQ:3, attack:0.01, durBeats:1.0, vol:0.45},
+
+    // World Melodic (round 3)
+    {id:'duduk', name:'Duduk', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0], sub:0.25, subMix:0.2, filterType:'lowpass', filterFreq:1400, attack:0.1, durBeats:1.6, vibratoRate:4, vibratoDepth:5, vol:0.5},
+    {id:'hangDrum', name:'Hang Drum', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0,12], sub:0, attack:0.001, pluck:true, decayTime:1.3, vol:0.5},
+    {id:'steelpanMelody', name:'Steelpan', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0,12,19], sub:0, attack:0.001, pluck:true, decayTime:0.6, vol:0.5},
+
+    // FX & Chip (round 3)
+    {id:'impactFX', name:'Impact FX', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[-12,0,12], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:800, attack:0.001, durBeats:0.8, vol:0.5},
+    {id:'noiseSweepDown', name:'Sweep Down FX', cat:'FX & Chip', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'lowpass', filterFreq:600, attack:0.001, durBeats:1.2, vol:0.35},
+    {id:'roboVoice', name:'Robo Voice', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[-2,0,2], sub:0, filterType:'bandpass', filterFreq:1300, filterQ:4, attack:0.01, durBeats:0.9, vol:0.4},
+
+    // Vocal & Choir (new category)
+    {id:'choirAahs', name:'Choir Aahs', cat:'Vocal & Choir', kind:'melodic', wave:'sawtooth', unison:[-7,0,7,12], sub:0, filterType:'lowpass', filterFreq:2200, attack:0.25, durBeats:2.2, vibratoRate:4, vibratoDepth:3, vol:0.4},
+    {id:'choirOohs', name:'Choir Oohs', cat:'Vocal & Choir', kind:'melodic', wave:'sine', unison:[-5,0,5], sub:0, filterType:'lowpass', filterFreq:1800, attack:0.3, durBeats:2.4, vibratoRate:4, vibratoDepth:3, vol:0.4},
+    {id:'vocoderVoice', name:'Vocoder Voice', cat:'Vocal & Choir', kind:'melodic', wave:'sawtooth', unison:[0,3,7], sub:0, filterType:'bandpass', filterFreq:1500, filterQ:6, attack:0.01, durBeats:0.9, vol:0.4},
+    {id:'hummingVoice', name:'Humming Voice', cat:'Vocal & Choir', kind:'melodic', wave:'sine', unison:[0], sub:0.25, subMix:0.15, filterType:'lowpass', filterFreq:1600, attack:0.08, durBeats:1.4, vibratoRate:5, vibratoDepth:4, vol:0.45},
+
+    // Keys (round 4)
+    {id:'gospelOrgan', name:'Gospel Organ', cat:'Keys', kind:'melodic', wave:'square', unison:[0,7,12,19], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:4000, attack:0.008, durBeats:1.5, vol:0.5},
+    {id:'harpsichord2', name:'Baroque Harpsichord', cat:'Keys', kind:'melodic', wave:'square', unison:[0,12], sub:0, filterType:'highpass', filterFreq:500, attack:0.001, pluck:true, decayTime:0.7, vol:0.4},
+    {id:'detunedPiano', name:'Detuned Piano', cat:'Keys', kind:'melodic', wave:'triangle', unison:[-4,0,4], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:3000, attack:0.005, durBeats:1.1, vol:0.5},
+
+    // Bass (round 4)
+    {id:'moogBass', name:'Moog Bass', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.45, filterType:'lowpass', filterFreq:800, filterQ:3, attack:0.01, durBeats:0.9, vol:0.6},
+    {id:'octaveBass', name:'Octave Bass', cat:'Bass', kind:'melodic', wave:'square', unison:[0,-12], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:1000, attack:0.003, durBeats:0.5, vol:0.6},
+    {id:'grimeBass', name:'Grime Bass', cat:'Bass', kind:'melodic', wave:'square', unison:[0,1,-1], sub:0.5, subMix:0.5, filterType:'lowpass', filterFreq:600, filterQ:4, attack:0.001, durBeats:0.5, vol:0.6},
+
+    // Guitars (round 4)
+    {id:'flamencoGuitar', name:'Flamenco Guitar', cat:'Guitars', kind:'melodic', wave:'triangle', unison:[0,7,12], sub:0, filterType:'highpass', filterFreq:300, attack:0.001, pluck:true, decayTime:0.5, vol:0.5},
+    {id:'guitarFeedback', name:'Guitar Feedback', cat:'Guitars', kind:'melodic', wave:'sawtooth', unison:[0,12], sub:0, filterType:'bandpass', filterFreq:1200, filterQ:5, attack:0.15, durBeats:2.0, vibratoRate:6, vibratoDepth:8, vol:0.4},
+
+    // Leads (round 4)
+    {id:'acidLead303', name:'Acid Lead 303', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'lowpass', filterFreq:1300, filterQ:9, attack:0.001, durBeats:0.6, vol:0.5},
+    {id:'brassLead', name:'Brass Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[0,5], sub:0, filterType:'bandpass', filterFreq:2000, filterQ:2, attack:0.02, durBeats:0.85, vol:0.45},
+
+    // Plucks (round 4)
+    {id:'santoor', name:'Santoor', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,12,19], sub:0, attack:0.001, pluck:true, decayTime:0.9, vol:0.45},
+    {id:'dulcimer', name:'Dulcimer', cat:'Plucks', kind:'melodic', wave:'sine', unison:[0,7], sub:0, attack:0.001, pluck:true, decayTime:0.6, vol:0.45},
+
+    // Pads & Strings (round 4)
+    {id:'evolvingPad', name:'Evolving Pad', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-11,-5,0,5,11], sub:0.25, subMix:0.2, filterType:'lowpass', filterFreq:1300, attack:0.6, durBeats:3.5, vol:0.3},
+    {id:'violaSolo', name:'Viola Solo', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1800, filterQ:1.8, attack:0.08, durBeats:1.4, vibratoRate:5, vibratoDepth:4, vol:0.45},
+
+    // Wind & Brass (round 4)
+    {id:'shakuhachi', name:'Shakuhachi', cat:'Wind & Brass', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:2400, attack:0.1, durBeats:1.4, vibratoRate:4, vibratoDepth:6, vol:0.4},
+    {id:'muteTrumpet', name:'Muted Trumpet', cat:'Wind & Brass', kind:'melodic', wave:'square', unison:[0], sub:0, filterType:'bandpass', filterFreq:2400, filterQ:3, attack:0.02, durBeats:0.8, vol:0.4},
+
+    // World Melodic (round 4)
+    {id:'oud', name:'Oud', cat:'World Melodic', kind:'melodic', wave:'triangle', unison:[0,7,12], sub:0, filterType:'lowpass', filterFreq:2000, attack:0.001, pluck:true, decayTime:0.8, vol:0.5},
+    {id:'guzheng', name:'Guzheng', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0,12], sub:0, attack:0.001, pluck:true, decayTime:0.9, vol:0.5},
+
+    // FX & Chip (round 4)
+    {id:'droneTexture', name:'Drone Texture', cat:'FX & Chip', kind:'melodic', wave:'sawtooth', unison:[-2,0,2], sub:0.5, subMix:0.3, filterType:'lowpass', filterFreq:500, attack:0.8, durBeats:4.0, vol:0.3},
+    {id:'chipArpFast', name:'Chip Arp Fast', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0,7,12], sub:0, attack:0.001, durBeats:0.3, vol:0.35},
+
+    // Vocal & Choir (round 4)
+    {id:'choirSopranoSolo', name:'Soprano Solo', cat:'Vocal & Choir', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:2400, attack:0.06, durBeats:1.5, vibratoRate:5, vibratoDepth:5, vol:0.45},
+    {id:'gangVocalChop', name:'Vocal Chop', cat:'Vocal & Choir', kind:'melodic', wave:'sawtooth', unison:[0,4,7], sub:0, filterType:'bandpass', filterFreq:1700, filterQ:4, attack:0.001, pluck:true, decayTime:0.3, vol:0.4},
+
+    // Synth Bells (new category)
+    {id:'crystalBell', name:'Crystal Bell', cat:'Synth Bells', kind:'melodic', wave:'sine', unison:[0,19,24], sub:0, attack:0.001, pluck:true, decayTime:1.6, vol:0.4},
+    {id:'tubularBell', name:'Tubular Bell', cat:'Synth Bells', kind:'melodic', wave:'sine', unison:[0,12,28], sub:0, attack:0.002, pluck:true, decayTime:2.2, vol:0.4},
+    {id:'gamelanBell', name:'Gamelan Bell', cat:'Synth Bells', kind:'melodic', wave:'triangle', unison:[0,17,24], sub:0, attack:0.001, pluck:true, decayTime:1.4, vol:0.4},
+    {id:'fmBell2', name:'FM Bell 2', cat:'Synth Bells', kind:'melodic', wave:'sine', unison:[0,9,21], sub:0, attack:0.001, pluck:true, decayTime:1.2, vol:0.4},
+
+    // Keys (round 5)
+    {id:'suitcasePiano', name:'Suitcase Piano', cat:'Keys', kind:'melodic', wave:'triangle', unison:[0,-5], sub:0.5, subMix:0.2, filterType:'lowpass', filterFreq:2400, attack:0.008, durBeats:1.3, vol:0.5},
+    {id:'reedOrgan', name:'Reed Organ', cat:'Keys', kind:'melodic', wave:'sawtooth', unison:[0,12], sub:0, filterType:'lowpass', filterFreq:2200, attack:0.04, durBeats:1.6, vol:0.45},
+
+    // Bass (round 4.5)
+    {id:'subSineBass', name:'Sub Sine Bass', cat:'Bass', kind:'melodic', wave:'sine', unison:[0], sub:0, filterType:'lowpass', filterFreq:400, attack:0.015, durBeats:1.0, vol:0.65},
+    {id:'talkingBass', name:'Talking Bass', cat:'Bass', kind:'melodic', wave:'sawtooth', unison:[0], sub:0.5, subMix:0.3, filterType:'bandpass', filterFreq:800, filterQ:5, attack:0.01, durBeats:0.8, vol:0.55},
+
+    // Guitars (round 5)
+    {id:'jazzGuitar', name:'Jazz Guitar', cat:'Guitars', kind:'melodic', wave:'sine', unison:[0,7], sub:0.25, subMix:0.15, filterType:'lowpass', filterFreq:1800, attack:0.004, pluck:true, decayTime:0.9, vol:0.5},
+    {id:'guitarHarmonicSqueal', name:'Harmonic Squeal', cat:'Guitars', kind:'melodic', wave:'square', unison:[0,24], sub:0, filterType:'bandpass', filterFreq:2600, filterQ:6, attack:0.1, durBeats:1.4, vibratoRate:7, vibratoDepth:6, vol:0.4},
+
+    // Leads (round 5)
+    {id:'plsWidthLead', name:'Pulse Width Lead', cat:'Leads', kind:'melodic', wave:'square', unison:[0,-12], sub:0, filterType:'lowpass', filterFreq:2500, attack:0.006, durBeats:0.9, vol:0.45},
+    {id:'chorusLead', name:'Chorus Lead', cat:'Leads', kind:'melodic', wave:'sawtooth', unison:[-9,0,9], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.015, durBeats:1.0, vibratoRate:4, vibratoDepth:3, vol:0.45},
+
+    // Plucks (round 5)
+    {id:'lute', name:'Lute', cat:'Plucks', kind:'melodic', wave:'triangle', unison:[0,7,12], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.001, pluck:true, decayTime:0.7, vol:0.45},
+    {id:'balalaika', name:'Balalaika', cat:'Plucks', kind:'melodic', wave:'sawtooth', unison:[0,12], sub:0, filterType:'highpass', filterFreq:450, attack:0.001, pluck:true, decayTime:0.45, vol:0.45},
+
+    // Pads & Strings (round 5)
+    {id:'granularPad', name:'Granular Pad', cat:'Pads & Strings', kind:'melodic', wave:'square', unison:[-11,-4,0,4,11], sub:0, filterType:'lowpass', filterFreq:1600, attack:0.45, durBeats:2.9, vol:0.3},
+    {id:'doubleBassSection', name:'Double Bass Section', cat:'Pads & Strings', kind:'melodic', wave:'sawtooth', unison:[-4,0,4], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:700, attack:0.15, durBeats:1.9, vol:0.5},
+
+    // Wind & Brass (round 5)
+    {id:'panpipesSolo', name:'Panpipes Solo', cat:'Wind & Brass', kind:'melodic', wave:'sine', unison:[0,12], sub:0, filterType:'lowpass', filterFreq:2800, attack:0.05, durBeats:1.1, vibratoRate:5, vibratoDepth:3, vol:0.4},
+    {id:'sousaphone', name:'Sousaphone', cat:'Wind & Brass', kind:'melodic', wave:'sine', unison:[0], sub:0.5, subMix:0.55, filterType:'lowpass', filterFreq:700, attack:0.06, durBeats:1.4, vol:0.55},
+
+    // World Melodic (round 5)
+    {id:'kalimbaWorld', name:'Kalimba Deep', cat:'World Melodic', kind:'melodic', wave:'sine', unison:[0,-12], sub:0, attack:0.001, pluck:true, decayTime:0.8, vol:0.5},
+    {id:'sarangiSynth', name:'Sarangi Synth', cat:'World Melodic', kind:'melodic', wave:'sawtooth', unison:[0], sub:0, filterType:'bandpass', filterFreq:1500, filterQ:2.5, attack:0.09, durBeats:1.4, vibratoRate:6, vibratoDepth:6, vol:0.45},
+
+    // FX & Chip (round 5)
+    {id:'crushedChip', name:'Crushed Chip', cat:'FX & Chip', kind:'melodic', wave:'square', unison:[0,-5], sub:0, filterType:'lowpass', filterFreq:1400, attack:0.001, durBeats:0.5, vol:0.4},
+    {id:'ufoFX', name:'UFO FX', cat:'FX & Chip', kind:'melodic', wave:'sine', unison:[0], sub:0, attack:0.02, durBeats:1.3, vibratoRate:9, vibratoDepth:14, vol:0.4},
+
+    // Vocal & Choir (round 5)
+    {id:'boysChoir', name:"Boys' Choir", cat:'Vocal & Choir', kind:'melodic', wave:'sine', unison:[-3,0,3,7], sub:0, filterType:'lowpass', filterFreq:2600, attack:0.2, durBeats:2.0, vibratoRate:4, vibratoDepth:3, vol:0.4},
+    {id:'whisperVoice', name:'Whisper Voice', cat:'Vocal & Choir', kind:'melodic', wave:'triangle', unison:[0], sub:0, filterType:'bandpass', filterFreq:2200, filterQ:1.2, attack:0.1, durBeats:1.0, vol:0.3},
+
+    // Synth Bells (round 5)
+    {id:'churchBell', name:'Church Bell', cat:'Synth Bells', kind:'melodic', wave:'sine', unison:[0,7,12,19], sub:0.25, subMix:0.2, attack:0.002, pluck:true, decayTime:2.6, vol:0.4},
+    {id:'wineGlass', name:'Wine Glass', cat:'Synth Bells', kind:'melodic', wave:'sine', unison:[0,24], sub:0, attack:0.02, pluck:true, decayTime:1.8, vol:0.35},
+
+    // Orchestral Hits (new category)
+    {id:'orchHitMajor', name:'Orchestra Hit', cat:'Orchestral Hits', kind:'melodic', wave:'sawtooth', unison:[-7,-3,0,4,7,12], sub:0.5, subMix:0.4, filterType:'lowpass', filterFreq:3000, attack:0.001, durBeats:0.5, vol:0.5},
+    {id:'stringStab', name:'String Stab', cat:'Orchestral Hits', kind:'melodic', wave:'sawtooth', unison:[-3,0,3], sub:0, filterType:'bandpass', filterFreq:2000, filterQ:1.5, attack:0.001, durBeats:0.35, vol:0.5},
+    {id:'brassHit', name:'Brass Hit', cat:'Orchestral Hits', kind:'melodic', wave:'square', unison:[0,4,7], sub:0.25, subMix:0.25, filterType:'lowpass', filterFreq:2200, attack:0.001, durBeats:0.4, vol:0.5},
+    {id:'timpaniHit', name:'Timpani Hit', cat:'Orchestral Hits', kind:'melodic', wave:'sine', unison:[0], sub:0.5, subMix:0.6, filterType:'lowpass', filterFreq:400, attack:0.001, durBeats:0.7, vol:0.55},
   ];
 
   const INSTRUMENTS = DRUM_INSTRUMENTS.concat(MELODIC_INSTRUMENTS);
@@ -579,7 +802,7 @@
   INSTRUMENTS.forEach(inst => { INSTRUMENTS_BY_ID[inst.id] = inst; });
   const CATEGORY_ORDER = [
     'Kicks','Snares & Claps','Hats & Cymbals','Toms & Drums','World Percussion','Electronic Percussion',
-    'Keys','Bass','Guitars','Leads','Plucks','Pads & Strings','Wind & Brass','World Melodic','FX & Chip'
+    'Keys','Bass','Guitars','Leads','Plucks','Pads & Strings','Wind & Brass','World Melodic','Vocal & Choir','Synth Bells','Orchestral Hits','FX & Chip'
   ];
 
   // Auto-assign GM-ish MIDI note / program numbers for export
@@ -587,7 +810,7 @@
   DRUM_INSTRUMENTS.forEach((inst, i) => { DRUM_MIDI_MAP[inst.id] = 35 + (i % 46); });
   const CATEGORY_PROGRAM = {
     'Keys':0, 'Bass':38, 'Guitars':25, 'Leads':81, 'Plucks':45, 'Pads & Strings':89,
-    'Wind & Brass':61, 'World Melodic':104, 'FX & Chip':99
+    'Wind & Brass':61, 'World Melodic':104, 'Vocal & Choir':52, 'Synth Bells':112, 'Orchestral Hits':55, 'FX & Chip':99
   };
 
   // ============================================================
