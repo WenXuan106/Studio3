@@ -65,6 +65,12 @@
   }
   .bars-ctrl button:hover{ border-color:var(--amber); }
   .bars-ctrl .bars-val{ font-size:12px; color:var(--text-dim); min-width:64px; text-align:center; }
+  .bars-ctrl input[type=number]{
+    background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:6px 4px; font-size:12px;
+  }
+  .bars-ctrl input[type=number]::-webkit-inner-spin-button,
+  .bars-ctrl input[type=number]::-webkit-outer-spin-button{ opacity:0.5; }
 
   .panel{
     background: var(--bg-panel); border:1px solid var(--line); border-radius:10px;
@@ -252,7 +258,7 @@
         <label>Bars</label>
         <div class="bars-ctrl">
           <button id="barMinus">−</button>
-          <span class="bars-val mono" id="barsVal">4 bars</span>
+          <input type="number" id="barsInput" class="mono" min="1" step="1" value="4" style="width:64px; text-align:center;">
           <button id="barPlus">+</button>
         </div>
       </div>
@@ -330,7 +336,6 @@
       <input type="file" id="midiFileInput" accept=".mid,.midi" style="display:none;">
     </div>
     <div class="status" id="statusMsg"></div>
-    <div id="downloadArea" style="margin-top:6px;"></div>
   </div>
 
 </div>
@@ -842,25 +847,6 @@
   const scheduleAheadTime = 0.12, lookahead = 25;
   let keyboardOctave = 3;
 
-  // Robust file download: forces a real "save" (not an inline audio player,
-  // which Safari opens for audio/wav blobs even with the download attribute),
-  // and always leaves a visible link behind in case the automatic click gets
-  // blocked (e.g. inside a sandboxed preview).
-  function offerDownload(blob, filename, label){
-    const forcedBlob = new Blob([blob], {type:'application/octet-stream'});
-    const url = URL.createObjectURL(forcedBlob);
-    const area = document.getElementById('downloadArea');
-    area.innerHTML = '';
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    a.textContent = label || ('Download ' + filename);
-    a.className = 'action save';
-    a.style.display = 'inline-block';
-    area.appendChild(a);
-    try{ a.click(); }catch(e){ /* fall back to the visible link above */ }
-    setTimeout(()=>URL.revokeObjectURL(url), 120000);
-  }
-
   function noteFreq(name){
     const A4 = 440;
     const m = name.match(/([A-G]#?)(\d)/);
@@ -1030,17 +1016,15 @@
   }
   let uiStep = 0;
   function scheduleStep(step, time){
-    // Compute solo-state once per step instead of once per melodic track
-    // (that inner tracks.some() re-scan was O(tracks^2) per step).
-    const anySolo = tracks.some(t=>t.solo);
     tracks.forEach(track=>{
-      if(track.mute) return;
-      if(anySolo && !track.solo) return;
       const val = track.pattern[step];
       if(track.kind === 'drum'){
         if(val) triggerTrackAudio(track, time);
       } else if(track.kind === 'melodic'){
         if(val !== null && val !== undefined){
+          if(track.mute) return;
+          const anySolo = tracks.some(t=>t.solo);
+          if(anySolo && !track.solo) return;
           const inst = INSTRUMENTS_BY_ID[track.instId];
           if(inst) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
         }
@@ -1049,20 +1033,10 @@
     const delay = (time - audioCtx.currentTime)*1000;
     setTimeout(()=>{ uiStep = step; updatePlayhead(); }, Math.max(0,delay));
   }
-  // Only touch the handful of cells at the previous/current step column instead
-  // of re-scanning every step/cell in the whole document on every tick — that
-  // full-page rescan is what bogs down (and can freeze) once there are a lot
-  // of tracks, especially on less powerful devices like iPad.
-  let lastUiStep = -1;
   function updatePlayhead(){
-    if(lastUiStep === uiStep) return;
-    if(lastUiStep >= 0){
-      document.querySelectorAll(`.step[data-step="${lastUiStep}"], .cell[data-step="${lastUiStep}"]`)
-        .forEach(el=>el.classList.remove('playhead'));
-    }
-    document.querySelectorAll(`.step[data-step="${uiStep}"], .cell[data-step="${uiStep}"]`)
-      .forEach(el=>el.classList.add('playhead'));
-    lastUiStep = uiStep;
+    document.querySelectorAll('.step, .cell').forEach(el=>{
+      el.classList.toggle('playhead', parseInt(el.dataset.step,10)===uiStep);
+    });
     document.querySelectorAll('#stepIndicator span').forEach((el,i)=>{
       el.classList.toggle('on', i===uiStep);
     });
@@ -1080,7 +1054,6 @@
     document.getElementById('playBtn').classList.remove('playing');
     document.querySelectorAll('.playhead').forEach(el=>el.classList.remove('playhead'));
     document.querySelectorAll('#stepIndicator span').forEach(el=>el.classList.remove('on'));
-    lastUiStep = -1;
   }
 
   // ============================================================
@@ -1092,7 +1065,7 @@
     for(let i=0;i<showCount;i++){ el.appendChild(document.createElement('span')); }
   }
   function buildSeqHeader(){
-    document.getElementById('barsVal').textContent = bars + (bars===1?' bar':' bars');
+    document.getElementById('barsInput').value = bars;
     const el = document.getElementById('seqHeader');
     el.innerHTML = '';
     for(let i=0;i<totalSteps;i++){
@@ -1490,22 +1463,28 @@
     document.getElementById('instPicker').classList.toggle('open');
   };
 
-  document.getElementById('barPlus').onclick = ()=>{
-    bars++; totalSteps = bars*STEP_PER_BAR;
+  // Resizes every track's pattern to match a new bar count. No upper bound —
+  // the song can grow to however many bars the browser's memory can hold.
+  function setBars(newBars){
+    newBars = Math.floor(newBars);
+    if(!Number.isFinite(newBars) || newBars < 1) newBars = 1;
+    if(newBars === bars){ document.getElementById('barsInput').value = bars; return; }
+    bars = newBars;
+    totalSteps = bars*STEP_PER_BAR;
     tracks.forEach(t=>{
       const fill = t.kind==='drum' ? false : null;
-      for(let i=0;i<STEP_PER_BAR;i++) t.pattern.push(fill);
+      if(t.pattern.length < totalSteps){
+        for(let i=t.pattern.length;i<totalSteps;i++) t.pattern.push(fill);
+      } else {
+        t.pattern.length = totalSteps;
+      }
     });
     refreshAllUI();
-    setStatus('Added a bar — now ' + bars + ' bars.');
-  };
-  document.getElementById('barMinus').onclick = ()=>{
-    if(bars<=1){ setStatus('Minimum is 1 bar.'); return; }
-    bars--; totalSteps = bars*STEP_PER_BAR;
-    tracks.forEach(t=>{ t.pattern.length = totalSteps; });
-    refreshAllUI();
-    setStatus('Removed a bar — now ' + bars + ' bars.');
-  };
+    setStatus('Now ' + bars + (bars===1?' bar':' bars') + '.');
+  }
+  document.getElementById('barPlus').onclick = ()=> setBars(bars+1);
+  document.getElementById('barMinus').onclick = ()=> setBars(bars-1);
+  document.getElementById('barsInput').onchange = (e)=> setBars(parseInt(e.target.value,10));
 
   document.getElementById('clearBtn').onclick = ()=>{
     tracks.forEach(t=>{ t.pattern.fill(t.kind==='drum' ? false : null); });
@@ -1667,9 +1646,13 @@
     if(trackChunks.length===1){ setStatus('Nothing to export — add some steps first.'); return; }
     const header = midiChunk('MThd', [...u16(1), ...u16(trackChunks.length), ...u16(TICKS_PER_QUARTER)]);
     const allBytes = new Uint8Array([...header, ...trackChunks.flat()]);
-    const blob = new Blob([allBytes], {type:'application/octet-stream'});
-    offerDownload(blob, 'deck16-pattern.mid', 'Download deck16-pattern.mid');
-    setStatus('MIDI exported — if the download didn\'t start automatically, use the link below.');
+    const blob = new Blob([allBytes], {type:'audio/midi'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'deck16-pattern.mid';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus('MIDI file exported.');
   }
   document.getElementById('exportMidiBtn').onclick = exportMIDI;
 
@@ -1756,8 +1739,12 @@
       const rendered = await offlineCtx.startRendering();
       showProgress(100);
       const blob = audioBufferToWavBlob(rendered);
-      offerDownload(blob, 'deck16-pattern.wav', 'Download deck16-pattern.wav');
-      setStatus('Audio rendered — if the download didn\'t start automatically, use the link below.');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'deck16-pattern.wav';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('Audio file exported.');
     } catch(err){
       setStatus('Could not render audio.');
     } finally {
@@ -1851,14 +1838,6 @@
     NOTE_RANGE.forEach((n,i)=>{ const d=Math.abs(noteNameToMidi(n)-midiNote); if(d<bestDist){bestDist=d; bestIdx=i;} });
     return bestIdx;
   }
-  // Grid-based step sequencers don't scale to arbitrarily long/dense songs —
-  // every step is a real DOM element, so an import that requests hundreds of
-  // bars across dozens of tracks can mean tens of thousands of elements in
-  // one giant flex row, which is what makes big files feel like they "hang."
-  // Cap both dimensions so an import always stays fast and usable.
-  const MAX_IMPORT_BARS = 32;
-  const MAX_IMPORT_TRACKS = 16;
-
   async function importMIDI(file){
     try{
       const buf = await file.arrayBuffer();
@@ -1866,13 +1845,12 @@
       if(noteOnEvents.length===0){ setStatus('No notes found in that MIDI file.'); return; }
       const stepTicks = division/4;
 
-      // 1) Auto-size the bar count to fit the imported song, capped for performance
+      // 1) Auto-size the bar count to fit the imported song
       let maxTick = 0;
       noteOnEvents.forEach(ev=>{ if(ev.tick > maxTick) maxTick = ev.tick; });
       const neededSteps = Math.max(STEP_PER_BAR, Math.ceil((maxTick + stepTicks) / stepTicks));
       const neededBars = Math.max(1, Math.ceil(neededSteps / STEP_PER_BAR));
-      const wasTruncated = neededBars > MAX_IMPORT_BARS;
-      bars = Math.min(neededBars, MAX_IMPORT_BARS);
+      bars = neededBars;
       totalSteps = bars * STEP_PER_BAR;
 
       // 2) Work out which drum instruments & melodic channels the file needs
@@ -1881,21 +1859,20 @@
       const neededChannels = Array.from(new Set(noteOnEvents.filter(ev=>ev.channel!==9).map(ev=>ev.channel))).sort((a,b)=>a-b);
 
       // 3) Reuse existing matching tracks where possible, auto-add the rest
-      //    (capped — see MAX_IMPORT_TRACKS above)
-      let addedCount = 0, skippedTracks = 0;
+      let addedCount = 0;
       const drumInstIdToTrack = {};
       tracks.filter(t=>t.kind==='drum').forEach(t=>{
         if(neededDrumInstIds.has(t.instId) && !drumInstIdToTrack[t.instId]) drumInstIdToTrack[t.instId] = t;
       });
       neededDrumInstIds.forEach(instId=>{
-        if(drumInstIdToTrack[instId]) return;
-        if(tracks.length >= MAX_IMPORT_TRACKS){ skippedTracks++; return; }
-        const inst = INSTRUMENTS_BY_ID[instId];
-        if(inst){
-          const t = newTrackFromInstrument(inst);
-          tracks.push(t);
-          drumInstIdToTrack[instId] = t;
-          addedCount++;
+        if(!drumInstIdToTrack[instId]){
+          const inst = INSTRUMENTS_BY_ID[instId];
+          if(inst){
+            const t = newTrackFromInstrument(inst);
+            tracks.push(t);
+            drumInstIdToTrack[instId] = t;
+            addedCount++;
+          }
         }
       });
 
@@ -1906,14 +1883,12 @@
         if(reuseIdx < existingMelodic.length){
           channelToTrack[ch] = existingMelodic[reuseIdx];
           reuseIdx++;
-        } else if(tracks.length < MAX_IMPORT_TRACKS){
+        } else {
           const inst = instrumentForProgram(programChanges[ch]);
           const t = newTrackFromInstrument(inst);
           tracks.push(t);
           channelToTrack[ch] = t;
           addedCount++;
-        } else {
-          skippedTracks++;
         }
       });
 
@@ -1923,8 +1898,7 @@
         t.pattern = new Array(totalSteps).fill(fill);
       });
 
-      // 5) Place the notes (anything beyond the capped bar count / dropped
-      //    channels is silently skipped rather than blowing up the grid)
+      // 5) Place the notes
       let placed = 0;
       const songTicks = totalSteps * stepTicks;
       noteOnEvents.forEach(ev=>{
@@ -1941,10 +1915,8 @@
 
       refreshAllUI();
       let msg = 'MIDI imported — ' + bars + (bars===1?' bar':' bars');
-      if(wasTruncated) msg += ' (song was ' + neededBars + ' bars — capped to keep the grid fast)';
-      if(addedCount>0) msg += ', added ' + addedCount + ' instrument track' + (addedCount===1?'':'s') + ' automatically';
-      if(skippedTracks>0) msg += ', skipped ' + skippedTracks + ' extra instrument' + (skippedTracks===1?'':'s') + ' (track limit reached)';
-      setStatus(placed>0 ? msg + '.' : 'MIDI file had no usable note data.');
+      if(addedCount>0) msg += ', added ' + addedCount + ' instrument track' + (addedCount===1?'':'s') + ' automatically.';
+      setStatus(placed>0 ? msg : 'MIDI file had no usable note data.');
     }catch(err){ setStatus('Could not read that MIDI file.'); }
   }
   document.getElementById('importMidiBtn').onclick = ()=> document.getElementById('midiFileInput').click();
