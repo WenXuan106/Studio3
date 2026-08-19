@@ -330,6 +330,7 @@
       <input type="file" id="midiFileInput" accept=".mid,.midi" style="display:none;">
     </div>
     <div class="status" id="statusMsg"></div>
+    <div id="downloadArea" style="margin-top:6px;"></div>
   </div>
 
 </div>
@@ -840,6 +841,25 @@
   let nextNoteTime = 0, timerID = null;
   const scheduleAheadTime = 0.12, lookahead = 25;
   let keyboardOctave = 3;
+
+  // Robust file download: forces a real "save" (not an inline audio player,
+  // which Safari opens for audio/wav blobs even with the download attribute),
+  // and always leaves a visible link behind in case the automatic click gets
+  // blocked (e.g. inside a sandboxed preview).
+  function offerDownload(blob, filename, label){
+    const forcedBlob = new Blob([blob], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(forcedBlob);
+    const area = document.getElementById('downloadArea');
+    area.innerHTML = '';
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.textContent = label || ('Download ' + filename);
+    a.className = 'action save';
+    a.style.display = 'inline-block';
+    area.appendChild(a);
+    try{ a.click(); }catch(e){ /* fall back to the visible link above */ }
+    setTimeout(()=>URL.revokeObjectURL(url), 120000);
+  }
 
   function noteFreq(name){
     const A4 = 440;
@@ -1634,13 +1654,9 @@
     if(trackChunks.length===1){ setStatus('Nothing to export — add some steps first.'); return; }
     const header = midiChunk('MThd', [...u16(1), ...u16(trackChunks.length), ...u16(TICKS_PER_QUARTER)]);
     const allBytes = new Uint8Array([...header, ...trackChunks.flat()]);
-    const blob = new Blob([allBytes], {type:'audio/midi'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'deck16-pattern.mid';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setStatus('MIDI file exported.');
+    const blob = new Blob([allBytes], {type:'application/octet-stream'});
+    offerDownload(blob, 'deck16-pattern.mid', 'Download deck16-pattern.mid');
+    setStatus('MIDI exported — if the download didn\'t start automatically, use the link below.');
   }
   document.getElementById('exportMidiBtn').onclick = exportMIDI;
 
@@ -1727,12 +1743,8 @@
       const rendered = await offlineCtx.startRendering();
       showProgress(100);
       const blob = audioBufferToWavBlob(rendered);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'deck16-pattern.wav';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setStatus('Audio file exported.');
+      offerDownload(blob, 'deck16-pattern.wav', 'Download deck16-pattern.wav');
+      setStatus('Audio rendered — if the download didn\'t start automatically, use the link below.');
     } catch(err){
       setStatus('Could not render audio.');
     } finally {
