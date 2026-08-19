@@ -1851,6 +1851,14 @@
     NOTE_RANGE.forEach((n,i)=>{ const d=Math.abs(noteNameToMidi(n)-midiNote); if(d<bestDist){bestDist=d; bestIdx=i;} });
     return bestIdx;
   }
+  // Grid-based step sequencers don't scale to arbitrarily long/dense songs —
+  // every step is a real DOM element, so an import that requests hundreds of
+  // bars across dozens of tracks can mean tens of thousands of elements in
+  // one giant flex row, which is what makes big files feel like they "hang."
+  // Cap both dimensions so an import always stays fast and usable.
+  const MAX_IMPORT_BARS = 32;
+  const MAX_IMPORT_TRACKS = 16;
+
   async function importMIDI(file){
     try{
       const buf = await file.arrayBuffer();
@@ -1858,12 +1866,13 @@
       if(noteOnEvents.length===0){ setStatus('No notes found in that MIDI file.'); return; }
       const stepTicks = division/4;
 
-      // 1) Auto-size the bar count to fit the imported song
+      // 1) Auto-size the bar count to fit the imported song, capped for performance
       let maxTick = 0;
       noteOnEvents.forEach(ev=>{ if(ev.tick > maxTick) maxTick = ev.tick; });
       const neededSteps = Math.max(STEP_PER_BAR, Math.ceil((maxTick + stepTicks) / stepTicks));
       const neededBars = Math.max(1, Math.ceil(neededSteps / STEP_PER_BAR));
-      bars = neededBars;
+      const wasTruncated = neededBars > MAX_IMPORT_BARS;
+      bars = Math.min(neededBars, MAX_IMPORT_BARS);
       totalSteps = bars * STEP_PER_BAR;
 
       // 2) Work out which drum instruments & melodic channels the file needs
@@ -1872,20 +1881,21 @@
       const neededChannels = Array.from(new Set(noteOnEvents.filter(ev=>ev.channel!==9).map(ev=>ev.channel))).sort((a,b)=>a-b);
 
       // 3) Reuse existing matching tracks where possible, auto-add the rest
-      let addedCount = 0;
+      //    (capped — see MAX_IMPORT_TRACKS above)
+      let addedCount = 0, skippedTracks = 0;
       const drumInstIdToTrack = {};
       tracks.filter(t=>t.kind==='drum').forEach(t=>{
         if(neededDrumInstIds.has(t.instId) && !drumInstIdToTrack[t.instId]) drumInstIdToTrack[t.instId] = t;
       });
       neededDrumInstIds.forEach(instId=>{
-        if(!drumInstIdToTrack[instId]){
-          const inst = INSTRUMENTS_BY_ID[instId];
-          if(inst){
-            const t = newTrackFromInstrument(inst);
-            tracks.push(t);
-            drumInstIdToTrack[instId] = t;
-            addedCount++;
-          }
+        if(drumInstIdToTrack[instId]) return;
+        if(tracks.length >= MAX_IMPORT_TRACKS){ skippedTracks++; return; }
+        const inst = INSTRUMENTS_BY_ID[instId];
+        if(inst){
+          const t = newTrackFromInstrument(inst);
+          tracks.push(t);
+          drumInstIdToTrack[instId] = t;
+          addedCount++;
         }
       });
 
@@ -1896,12 +1906,14 @@
         if(reuseIdx < existingMelodic.length){
           channelToTrack[ch] = existingMelodic[reuseIdx];
           reuseIdx++;
-        } else {
+        } else if(tracks.length < MAX_IMPORT_TRACKS){
           const inst = instrumentForProgram(programChanges[ch]);
           const t = newTrackFromInstrument(inst);
           tracks.push(t);
           channelToTrack[ch] = t;
           addedCount++;
+        } else {
+          skippedTracks++;
         }
       });
 
@@ -1911,7 +1923,8 @@
         t.pattern = new Array(totalSteps).fill(fill);
       });
 
-      // 5) Place the notes
+      // 5) Place the notes (anything beyond the capped bar count / dropped
+      //    channels is silently skipped rather than blowing up the grid)
       let placed = 0;
       const songTicks = totalSteps * stepTicks;
       noteOnEvents.forEach(ev=>{
@@ -1928,8 +1941,10 @@
 
       refreshAllUI();
       let msg = 'MIDI imported — ' + bars + (bars===1?' bar':' bars');
-      if(addedCount>0) msg += ', added ' + addedCount + ' instrument track' + (addedCount===1?'':'s') + ' automatically.';
-      setStatus(placed>0 ? msg : 'MIDI file had no usable note data.');
+      if(wasTruncated) msg += ' (song was ' + neededBars + ' bars — capped to keep the grid fast)';
+      if(addedCount>0) msg += ', added ' + addedCount + ' instrument track' + (addedCount===1?'':'s') + ' automatically';
+      if(skippedTracks>0) msg += ', skipped ' + skippedTracks + ' extra instrument' + (skippedTracks===1?'':'s') + ' (track limit reached)';
+      setStatus(placed>0 ? msg + '.' : 'MIDI file had no usable note data.');
     }catch(err){ setStatus('Could not read that MIDI file.'); }
   }
   document.getElementById('importMidiBtn').onclick = ()=> document.getElementById('midiFileInput').click();
