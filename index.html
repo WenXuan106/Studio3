@@ -1704,19 +1704,8 @@
     if(!hasNotes){ setStatus('Nothing to export — add some steps first.'); return; }
     const btn = document.getElementById('exportAudioBtn');
     const savedLabel = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Rendering…';
-    // Elapsed-time status instead of a fake percentage — the previous version used
-    // OfflineAudioContext suspend()/resume() checkpoints to fake a progress bar, but
-    // that scheme can stall permanently in some browsers once there are enough
-    // scheduled notes (a suspend point can fail to land exactly on a render quantum,
-    // so its resume() never fires and everything downstream waits forever). A plain
-    // await on startRendering() has no such failure mode.
+    btn.disabled = true; btn.textContent = 'Preparing…';
     const startedAt = Date.now();
-    setStatus('Rendering audio…');
-    const tickInterval = setInterval(()=>{
-      const secs = Math.round((Date.now()-startedAt)/1000);
-      setStatus('Rendering audio… ' + secs + 's elapsed');
-    }, 1000);
     // Temporarily point the shared audio engine at an offline context so the
     // existing playDrumInstrument/playMelodicInstrument code can render silently.
     const savedAudioCtx = audioCtx, savedMasterGain = masterGain;
@@ -1731,7 +1720,15 @@
       masterGain.gain.value = document.getElementById('masterVol').value/100;
       masterGain.connect(offlineCtx.destination);
 
+      // Scheduling every note creates real Web Audio nodes (oscillators, filters,
+      // gains) — for a long, busy song that can be tens of thousands of nodes.
+      // Doing that in one unbroken synchronous loop blocks the main thread so hard
+      // that the browser can't repaint anything (not even the "Rendering…" text)
+      // until it's all done — which just looks like a permanent freeze on a big
+      // song. Scheduling it in small chunks with a yield in between keeps the tab
+      // responsive and lets the status text actually update as it goes.
       const anySolo = tracks.some(t=>t.solo);
+      const CHUNK_SIZE = 32; // steps per chunk before yielding back to the browser
       for(let step=0; step<totalSteps; step++){
         const time = step*secondsPerStep;
         tracks.forEach(track=>{
@@ -1746,9 +1743,27 @@
             if(val!==null && val!==undefined) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
           }
         });
+        if(step % CHUNK_SIZE === 0){
+          const pct = Math.round(step/totalSteps*100);
+          setStatus('Scheduling notes… ' + pct + '% (' + step + '/' + totalSteps + ' steps)');
+          btn.textContent = 'Scheduling ' + pct + '%…';
+          await new Promise(r=>setTimeout(r, 0));
+        }
       }
 
-      const rendered = await offlineCtx.startRendering();
+      setStatus('Rendering audio — this can take a while for long songs…');
+      btn.textContent = 'Rendering…';
+      const tickInterval = setInterval(()=>{
+        const secs = Math.round((Date.now()-startedAt)/1000);
+        setStatus('Rendering audio… ' + secs + 's elapsed');
+      }, 1000);
+      let rendered;
+      try{
+        rendered = await offlineCtx.startRendering();
+      } finally {
+        clearInterval(tickInterval);
+      }
+      setStatus('Encoding WAV file…');
       const blob = audioBufferToWavBlob(rendered);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1760,7 +1775,6 @@
     } catch(err){
       setStatus('Could not render audio: ' + (err && err.message ? err.message : err));
     } finally {
-      clearInterval(tickInterval);
       audioCtx = savedAudioCtx; masterGain = savedMasterGain;
       btn.disabled = false; btn.textContent = savedLabel;
     }
