@@ -65,12 +65,6 @@
   }
   .bars-ctrl button:hover{ border-color:var(--amber); }
   .bars-ctrl .bars-val{ font-size:12px; color:var(--text-dim); min-width:64px; text-align:center; }
-  .bars-ctrl input[type=number]{
-    background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
-    border-radius:6px; padding:6px 4px; font-size:12px;
-  }
-  .bars-ctrl input[type=number]::-webkit-inner-spin-button,
-  .bars-ctrl input[type=number]::-webkit-outer-spin-button{ opacity:0.5; }
 
   .panel{
     background: var(--bg-panel); border:1px solid var(--line); border-radius:10px;
@@ -258,7 +252,7 @@
         <label>Bars</label>
         <div class="bars-ctrl">
           <button id="barMinus">−</button>
-          <input type="number" id="barsInput" class="mono" min="1" step="1" value="4" style="width:64px; text-align:center;">
+          <span class="bars-val mono" id="barsVal">4 bars</span>
           <button id="barPlus">+</button>
         </div>
       </div>
@@ -281,11 +275,7 @@
 
     <div class="seq-scroll">
       <div class="seq-header-row">
-        <div class="seq-header-fixed" style="width:266px; display:flex; align-items:center; gap:6px;">
-          <button class="mini-btn" id="viewPrevBtn" title="Previous 30 bars">‹</button>
-          <span class="mono" id="viewRangeLabel" style="font-size:10.5px; color:var(--text-dim); white-space:nowrap;">1–30</span>
-          <button class="mini-btn" id="viewNextBtn" title="Next 30 bars">›</button>
-        </div>
+        <div class="seq-header-fixed" style="width:266px;"></div>
         <div class="seq-header-grid" id="seqHeader"></div>
       </div>
       <div id="trackList"></div>
@@ -349,34 +339,6 @@
   const STEP_PER_BAR = 16;
   let bars = 4;
   let totalSteps = bars * STEP_PER_BAR;
-
-  // The full song (tracks[*].pattern) can be however many bars the user's
-  // browser can hold — no cap. But rendering every bar as real DOM elements
-  // at once is what actually chokes the page on long songs. So instead we
-  // only ever build 30 bars' worth of cells at a time ("the window") and
-  // page through the song, while the underlying pattern data for the WHOLE
-  // song stays intact underneath — export always uses the full thing.
-  const VIEW_BARS = 30;
-  const VIEW_STEPS = VIEW_BARS * STEP_PER_BAR;
-  let viewStart = 0; // in steps, shared by the main grid and the piano roll
-  function clampViewStart(v){
-    const maxStart = Math.max(0, totalSteps - VIEW_STEPS);
-    return Math.min(Math.max(0, v), maxStart);
-  }
-  function currentWindow(){
-    const start = clampViewStart(viewStart);
-    const end = Math.min(totalSteps, start + VIEW_STEPS);
-    return { start, end };
-  }
-  function setViewStart(v){
-    viewStart = clampViewStart(v);
-    buildSeqHeader();
-    buildTrackList();
-    if(selectedTrackId!==null){
-      const t = tracks.find(tr=>tr.id===selectedTrackId);
-      if(t) buildRollEditor(t);
-    }
-  }
 
   // ============================================================
   // Instrument library — all synthesized (no external samples)
@@ -903,82 +865,59 @@
     }
     if(audioCtx.state==='suspended') audioCtx.resume();
   }
-  // A fresh random noise buffer used to be generated on every single hit, which
-  // is wasteful — for songs with thousands of hat/snare/clap hits (long imported
-  // MIDI files especially) that added up to a huge amount of redundant work and
-  // made rendering/exporting painfully slow. Instead, build a small reusable pool
-  // once per AudioContext and pick from it — keeps some natural variation between
-  // hits without resynthesizing noise every time.
-  let noiseBufferPool = null, noiseBufferPoolCtx = null;
-  function getNoiseBufferPool(){
-    if(noiseBufferPool && noiseBufferPoolCtx === audioCtx) return noiseBufferPool;
-    const bufferSize = audioCtx.sampleRate * 0.6;
-    const pool = [];
-    for(let p=0;p<4;p++){
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
-      pool.push(buffer);
-    }
-    noiseBufferPool = pool; noiseBufferPoolCtx = audioCtx;
-    return pool;
-  }
   function noiseBuffer(){
-    const pool = getNoiseBufferPool();
-    return pool[(Math.random()*pool.length)|0];
+    const bufferSize = audioCtx.sampleRate * 0.6;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+    return buffer;
   }
-  // (trackGainNode removed — folded into the merged envelope/volume gain above)
-
-  // When a render has a huge number of notes (e.g. a long imported MIDI song),
-  // building full-richness voices for every single one is what actually makes
-  // export slow — it's not a stall, it's tens of thousands of real oscillators/
-  // filters. This flag (set only during export, for only very large songs) trims
-  // per-note node count: fewer unison voices, no vibrato LFO. Never affects live
-  // playback or normal-sized patterns.
-  let synthPerfMode = false;
+  function trackGainNode(vol, time){
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(vol, time);
+    g.connect(masterGain);
+    return g;
+  }
 
   // ---------- Generic drum engine ----------
-  // (Below: each case used to route through its own gain node "g" into masterGain
-  // *and* a separate per-hit envelope gain "eg" into "g" — two GainNodes doing one
-  // job. Scaling the envelope breakpoints by the volume directly and connecting
-  // straight to masterGain sounds identical but is one fewer node per drum hit.)
   function playDrumInstrument(time, inst, vol){
-    const v = Math.max(vol, 0.0001); // exponential ramps require a positive value
+    const g = trackGainNode(vol, time);
     switch(inst.engine){
       case 'tone': {
         const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
         osc.frequency.setValueAtTime(inst.freq, time);
         osc.frequency.exponentialRampToValueAtTime(Math.max(1, inst.freqEnd||inst.freq*0.6), time+inst.decay);
-        const eg = audioCtx.createGain(); eg.connect(masterGain);
-        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
-        osc.connect(eg); osc.start(time); osc.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
         break;
       }
       case 'noise': {
         const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
         const filt = audioCtx.createBiquadFilter(); filt.type = inst.filterType||'highpass';
         filt.frequency.value = inst.filterFreq||5000; filt.Q.value = inst.q||0.5;
-        const eg = audioCtx.createGain(); eg.connect(masterGain);
-        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
-        noise.connect(filt); filt.connect(eg); noise.start(time); noise.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+inst.decay+0.02);
         break;
       }
       case 'tonenoise': {
         const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
         const filt = audioCtx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = inst.noiseFreq||1000;
-        const neg = audioCtx.createGain(); neg.connect(masterGain);
-        neg.gain.setValueAtTime(v, time); neg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.noiseDecay);
-        noise.connect(filt); filt.connect(neg);
+        const neg = audioCtx.createGain();
+        neg.gain.setValueAtTime(1, time); neg.gain.exponentialRampToValueAtTime(0.001, time+inst.noiseDecay);
+        noise.connect(filt); filt.connect(neg); neg.connect(g);
         const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = inst.toneFreq;
-        const oeg = audioCtx.createGain(); oeg.connect(masterGain);
-        oeg.gain.setValueAtTime(0.6*v, time); oeg.gain.exponentialRampToValueAtTime(0.001*v, time+inst.toneDecay);
-        osc.connect(oeg);
+        const oeg = audioCtx.createGain();
+        oeg.gain.setValueAtTime(0.6, time); oeg.gain.exponentialRampToValueAtTime(0.001, time+inst.toneDecay);
+        osc.connect(oeg); oeg.connect(g);
         noise.start(time); noise.stop(time+inst.noiseDecay+0.02); osc.start(time); osc.stop(time+inst.toneDecay+0.02);
         break;
       }
       case 'metallic': {
-        const eg = audioCtx.createGain(); eg.connect(masterGain);
-        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        eg.connect(g);
         (inst.freqs||[800]).forEach(f=>{
           const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.value = f;
           const og = audioCtx.createGain(); og.gain.value = inst.mix||0.3;
@@ -996,17 +935,17 @@
           const t = time + i*(inst.spacing||0.012);
           const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
           const filt = audioCtx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = inst.filterFreq||1200;
-          const eg = audioCtx.createGain(); eg.connect(masterGain);
-          eg.gain.setValueAtTime(0.8*v, t); eg.gain.exponentialRampToValueAtTime(0.001*v, t+inst.decay);
-          noise.connect(filt); filt.connect(eg); noise.start(t); noise.stop(t+inst.decay+0.02);
+          const eg = audioCtx.createGain();
+          eg.gain.setValueAtTime(0.8, t); eg.gain.exponentialRampToValueAtTime(0.001, t+inst.decay);
+          noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(t); noise.stop(t+inst.decay+0.02);
         }
         break;
       }
       case 'click': {
         const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.setValueAtTime(inst.freq, time);
-        const eg = audioCtx.createGain(); eg.connect(masterGain);
-        eg.gain.setValueAtTime(0.6*v, time); eg.gain.exponentialRampToValueAtTime(0.001*v, time+inst.decay);
-        osc.connect(eg); osc.start(time); osc.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain();
+        eg.gain.setValueAtTime(0.6, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
+        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
         break;
       }
     }
@@ -1015,29 +954,25 @@
   // ---------- Generic melodic engine ----------
   function playMelodicInstrument(time, freq, inst, gainMul){
     const vol = (inst.vol||0.5) * (gainMul!==undefined ? gainMul : 1);
-    const v = Math.max(vol, 0.0001); // exponential ramps require a positive value
-    // Same node-merging idea as the drum engine: fold the constant volume
-    // multiplier straight into the envelope breakpoints instead of a separate
-    // GainNode — identical sound, one fewer node per note.
-    let dest = masterGain;
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(vol, time); g.connect(masterGain);
+    let dest = g;
     if(inst.filterType){
       const filt = audioCtx.createBiquadFilter();
       filt.type = inst.filterType; filt.frequency.value = inst.filterFreq||2000; filt.Q.value = inst.filterQ||1;
-      filt.connect(masterGain); dest = filt;
+      filt.connect(g); dest = filt;
     }
     const eg = audioCtx.createGain(); eg.connect(dest);
     let dur;
     if(inst.pluck){ dur = inst.decayTime || 0.5; }
     else { dur = (60/bpm) * (inst.durBeats || 1.0); }
-    eg.gain.setValueAtTime(0.0001*v, time);
-    eg.gain.linearRampToValueAtTime(v, time + (inst.attack||0.01));
-    eg.gain.exponentialRampToValueAtTime(0.001*v, time + dur);
-    let unison = (inst.unison && inst.unison.length) ? inst.unison : [0];
-    if(synthPerfMode && unison.length > 3) unison = unison.slice(0, 3); // trim doubled-up voices on huge renders
+    eg.gain.setValueAtTime(0.0001, time);
+    eg.gain.linearRampToValueAtTime(1, time + (inst.attack||0.01));
+    eg.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    const unison = (inst.unison && inst.unison.length) ? inst.unison : [0];
     unison.forEach(cents=>{
       const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
       osc.frequency.setValueAtTime(freq, time); osc.detune.setValueAtTime(cents, time);
-      if(inst.vibratoRate && inst.vibratoDepth && !synthPerfMode){
+      if(inst.vibratoRate && inst.vibratoDepth){
         const lfo = audioCtx.createOscillator(); lfo.frequency.value = inst.vibratoRate;
         const lfoGain = audioCtx.createGain(); lfoGain.gain.value = inst.vibratoDepth;
         lfo.connect(lfoGain); lfoGain.connect(osc.detune); lfo.start(time); lfo.stop(time+dur+0.05);
@@ -1075,15 +1010,15 @@
   }
   let uiStep = 0;
   function scheduleStep(step, time){
-    const anySolo = tracks.some(t=>t.solo);
     tracks.forEach(track=>{
-      if(track.mute) return;
-      if(anySolo && !track.solo) return;
       const val = track.pattern[step];
       if(track.kind === 'drum'){
         if(val) triggerTrackAudio(track, time);
       } else if(track.kind === 'melodic'){
         if(val !== null && val !== undefined){
+          if(track.mute) return;
+          const anySolo = tracks.some(t=>t.solo);
+          if(anySolo && !track.solo) return;
           const inst = INSTRUMENTS_BY_ID[track.instId];
           if(inst) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
         }
@@ -1092,29 +1027,10 @@
     const delay = (time - audioCtx.currentTime)*1000;
     setTimeout(()=>{ uiStep = step; updatePlayhead(); }, Math.max(0,delay));
   }
-  // Only touch the current step's cells rather than rescanning every cell on
-  // the page (that scales with total song size and is what bogs down long
-  // songs). If playback moves past the currently-visible 30-bar window,
-  // page the window forward automatically so you can watch it play.
-  let lastUiStep = -1;
   function updatePlayhead(){
-    if(uiStep < viewStart || uiStep >= viewStart + VIEW_STEPS){
-      viewStart = clampViewStart(Math.floor(uiStep/VIEW_STEPS)*VIEW_STEPS);
-      buildSeqHeader(); buildTrackList();
-      if(selectedTrackId!==null){
-        const t = tracks.find(tr=>tr.id===selectedTrackId);
-        if(t) buildRollEditor(t);
-      }
-      lastUiStep = -1; // DOM was rebuilt, force a fresh highlight below
-    }
-    if(lastUiStep === uiStep) return;
-    if(lastUiStep >= 0){
-      document.querySelectorAll(`.step[data-step="${lastUiStep}"], .cell[data-step="${lastUiStep}"]`)
-        .forEach(el=>el.classList.remove('playhead'));
-    }
-    document.querySelectorAll(`.step[data-step="${uiStep}"], .cell[data-step="${uiStep}"]`)
-      .forEach(el=>el.classList.add('playhead'));
-    lastUiStep = uiStep;
+    document.querySelectorAll('.step, .cell').forEach(el=>{
+      el.classList.toggle('playhead', parseInt(el.dataset.step,10)===uiStep);
+    });
     document.querySelectorAll('#stepIndicator span').forEach((el,i)=>{
       el.classList.toggle('on', i===uiStep);
     });
@@ -1132,7 +1048,6 @@
     document.getElementById('playBtn').classList.remove('playing');
     document.querySelectorAll('.playhead').forEach(el=>el.classList.remove('playhead'));
     document.querySelectorAll('#stepIndicator span').forEach(el=>el.classList.remove('on'));
-    lastUiStep = -1;
   }
 
   // ============================================================
@@ -1144,16 +1059,10 @@
     for(let i=0;i<showCount;i++){ el.appendChild(document.createElement('span')); }
   }
   function buildSeqHeader(){
-    document.getElementById('barsInput').value = bars;
-    const { start, end } = currentWindow();
-    const startBar = Math.floor(start/STEP_PER_BAR)+1;
-    const endBar = Math.ceil(end/STEP_PER_BAR);
-    document.getElementById('viewRangeLabel').textContent = startBar + '–' + endBar + ' / ' + bars;
-    document.getElementById('viewPrevBtn').disabled = start<=0;
-    document.getElementById('viewNextBtn').disabled = end>=totalSteps;
+    document.getElementById('barsVal').textContent = bars + (bars===1?' bar':' bars');
     const el = document.getElementById('seqHeader');
     el.innerHTML = '';
-    for(let i=start;i<end;i++){
+    for(let i=0;i<totalSteps;i++){
       const d = document.createElement('div');
       d.className = 'num' + (i%4===0 ? ' beat':'') + (i%STEP_PER_BAR===0 ? ' barstart':'');
       d.textContent = i%STEP_PER_BAR===0 ? (Math.floor(i/STEP_PER_BAR)+1) : (i%4===0 ? '·':'');
@@ -1161,8 +1070,6 @@
     }
     buildStepIndicator();
   }
-  document.getElementById('viewPrevBtn').onclick = ()=> setViewStart(viewStart - VIEW_STEPS);
-  document.getElementById('viewNextBtn').onclick = ()=> setViewStart(viewStart + VIEW_STEPS);
 
   function newTrackFromInstrument(inst){
     return {
@@ -1224,8 +1131,7 @@
       row.appendChild(fixed);
 
       const grid = document.createElement('div'); grid.className='track-grid';
-      const { start, end } = currentWindow();
-      for(let i=start;i<end;i++){
+      for(let i=0;i<totalSteps;i++){
         const step = document.createElement('div');
         const isMelodic = track.kind==='melodic';
         step.className = 'step' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'') + (isMelodic?' melodic-block':'');
@@ -1305,13 +1211,12 @@
     const wrap = document.getElementById('pianoRoll');
     wrap.innerHTML = '';
     const inner = document.createElement('div'); inner.className = 'roll-inner';
-    const { start, end } = currentWindow();
 
     // Sticky ruler: bar numbers along the top, like a timeline
     const ruler = document.createElement('div'); ruler.className = 'roll-ruler';
     const spacer = document.createElement('div'); spacer.className = 'roll-ruler-spacer';
     ruler.appendChild(spacer);
-    for(let i=start;i<end;i++){
+    for(let i=0;i<totalSteps;i++){
       const rc = document.createElement('div');
       const isBarStart = i % STEP_PER_BAR === 0;
       rc.className = 'roll-ruler-cell' + (isBarStart ? ' barstart' : '');
@@ -1331,7 +1236,7 @@
       key.textContent = isC ? note : (isBlack ? '' : note.replace(/[0-9]+$/,''));
       row.appendChild(key);
 
-      for(let i=start;i<end;i++){
+      for(let i=0;i<totalSteps;i++){
         const cell = document.createElement('div');
         cell.className = 'cell' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
         cell.dataset.step = i; cell.dataset.note = ni;
@@ -1552,28 +1457,22 @@
     document.getElementById('instPicker').classList.toggle('open');
   };
 
-  // Resizes every track's pattern to match a new bar count. No upper bound —
-  // the song can grow to however many bars the browser's memory can hold.
-  function setBars(newBars){
-    newBars = Math.floor(newBars);
-    if(!Number.isFinite(newBars) || newBars < 1) newBars = 1;
-    if(newBars === bars){ document.getElementById('barsInput').value = bars; return; }
-    bars = newBars;
-    totalSteps = bars*STEP_PER_BAR;
+  document.getElementById('barPlus').onclick = ()=>{
+    bars++; totalSteps = bars*STEP_PER_BAR;
     tracks.forEach(t=>{
       const fill = t.kind==='drum' ? false : null;
-      if(t.pattern.length < totalSteps){
-        for(let i=t.pattern.length;i<totalSteps;i++) t.pattern.push(fill);
-      } else {
-        t.pattern.length = totalSteps;
-      }
+      for(let i=0;i<STEP_PER_BAR;i++) t.pattern.push(fill);
     });
     refreshAllUI();
-    setStatus('Now ' + bars + (bars===1?' bar':' bars') + '.');
-  }
-  document.getElementById('barPlus').onclick = ()=> setBars(bars+1);
-  document.getElementById('barMinus').onclick = ()=> setBars(bars-1);
-  document.getElementById('barsInput').onchange = (e)=> setBars(parseInt(e.target.value,10));
+    setStatus('Added a bar — now ' + bars + ' bars.');
+  };
+  document.getElementById('barMinus').onclick = ()=>{
+    if(bars<=1){ setStatus('Minimum is 1 bar.'); return; }
+    bars--; totalSteps = bars*STEP_PER_BAR;
+    tracks.forEach(t=>{ t.pattern.length = totalSteps; });
+    refreshAllUI();
+    setStatus('Removed a bar — now ' + bars + ' bars.');
+  };
 
   document.getElementById('clearBtn').onclick = ()=>{
     tracks.forEach(t=>{ t.pattern.fill(t.kind==='drum' ? false : null); });
@@ -1774,30 +1673,10 @@
   async function exportAudio(){
     const hasNotes = tracks.some(t=> t.kind==='drum' ? t.pattern.some(x=>x) : t.pattern.some(x=>x!==null && x!==undefined));
     if(!hasNotes){ setStatus('Nothing to export — add some steps first.'); return; }
-
-    // Count actual triggers up front (cheap — just scanning arrays already in
-    // memory) so we can decide whether this render is big enough to need the
-    // faster/lighter synthesis path.
-    let triggerCount = 0;
-    tracks.forEach(t=>{
-      if(t.kind==='drum') t.pattern.forEach(v=>{ if(v) triggerCount++; });
-      else t.pattern.forEach(v=>{ if(v!==null && v!==undefined) triggerCount++; });
-    });
-    const PERF_THRESHOLD = 4000;
-    synthPerfMode = triggerCount > PERF_THRESHOLD;
-    // Oscillators/filters cost roughly proportional to sample rate — halving it
-    // roughly halves DSP work for a render this dense. 22.05kHz is still clean for
-    // a busy chiptune-style arrangement; it's the standard trade-off engines make
-    // for exactly this situation.
-    const sampleRate = synthPerfMode ? 22050 : 44100;
-
     const btn = document.getElementById('exportAudioBtn');
     const savedLabel = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Preparing…';
-    if(synthPerfMode){
-      setStatus('Large song (' + triggerCount + ' notes) — using a faster render (22.05kHz, simplified voices) to keep export time reasonable…');
-    }
-    const startedAt = Date.now();
+    btn.disabled = true; btn.textContent = 'Rendering…';
+    setStatus('Rendering audio…');
     // Temporarily point the shared audio engine at an offline context so the
     // existing playDrumInstrument/playMelodicInstrument code can render silently.
     const savedAudioCtx = audioCtx, savedMasterGain = masterGain;
@@ -1805,21 +1684,14 @@
       const secondsPerStep = (60/bpm)/4;
       const tailSeconds = 3.0; // let long pads/decays ring out fully
       const duration = totalSteps*secondsPerStep + tailSeconds;
+      const sampleRate = 44100;
       const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(sampleRate*duration), sampleRate);
       audioCtx = offlineCtx;
       masterGain = offlineCtx.createGain();
       masterGain.gain.value = document.getElementById('masterVol').value/100;
       masterGain.connect(offlineCtx.destination);
 
-      // Scheduling every note creates real Web Audio nodes (oscillators, filters,
-      // gains) — for a long, busy song that can be tens of thousands of nodes.
-      // Doing that in one unbroken synchronous loop blocks the main thread so hard
-      // that the browser can't repaint anything (not even the "Rendering…" text)
-      // until it's all done — which just looks like a permanent freeze on a big
-      // song. Scheduling it in small chunks with a yield in between keeps the tab
-      // responsive and lets the status text actually update as it goes.
       const anySolo = tracks.some(t=>t.solo);
-      const CHUNK_SIZE = 32; // steps per chunk before yielding back to the browser
       for(let step=0; step<totalSteps; step++){
         const time = step*secondsPerStep;
         tracks.forEach(track=>{
@@ -1834,40 +1706,37 @@
             if(val!==null && val!==undefined) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
           }
         });
-        if(step % CHUNK_SIZE === 0){
-          const pct = Math.round(step/totalSteps*100);
-          setStatus('Scheduling notes… ' + pct + '% (' + step + '/' + totalSteps + ' steps)');
-          btn.textContent = 'Scheduling ' + pct + '%…';
-          await new Promise(r=>setTimeout(r, 0));
-        }
       }
 
-      setStatus('Rendering audio — this can take a while for long songs…');
-      btn.textContent = 'Rendering…';
-      const tickInterval = setInterval(()=>{
-        const secs = Math.round((Date.now()-startedAt)/1000);
-        setStatus('Rendering audio… ' + secs + 's elapsed');
-      }, 1000);
-      let rendered;
-      try{
-        rendered = await offlineCtx.startRendering();
-      } finally {
-        clearInterval(tickInterval);
+      // Report progress: schedule suspend/resume checkpoints through the render
+      // so the button and status can show a live percentage as it renders.
+      const showProgress = (pct)=>{
+        setStatus('Rendering audio… ' + pct + '%');
+        btn.textContent = 'Rendering ' + pct + '%…';
+      };
+      showProgress(0);
+      const numCheckpoints = 20;
+      for(let c=1; c<numCheckpoints; c++){
+        const checkTime = duration * c / numCheckpoints;
+        offlineCtx.suspend(checkTime).then(()=>{
+          showProgress(Math.round(c/numCheckpoints*100));
+          offlineCtx.resume();
+        });
       }
-      setStatus('Encoding WAV file…');
+
+      const rendered = await offlineCtx.startRendering();
+      showProgress(100);
       const blob = audioBufferToWavBlob(rendered);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'deck16-pattern.wav';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      const totalSecs = Math.round((Date.now()-startedAt)/1000);
-      setStatus('Audio file exported (took ' + totalSecs + 's).');
+      setStatus('Audio file exported.');
     } catch(err){
-      setStatus('Could not render audio: ' + (err && err.message ? err.message : err));
+      setStatus('Could not render audio.');
     } finally {
       audioCtx = savedAudioCtx; masterGain = savedMasterGain;
-      synthPerfMode = false;
       btn.disabled = false; btn.textContent = savedLabel;
     }
   }
@@ -1995,20 +1864,30 @@
         }
       });
 
+      // Match each MIDI channel to an existing track of the SAME instrument
+      // category (piano channels -> a Keys track, bass channels -> a Bass
+      // track, etc.) rather than just grabbing whichever melodic track
+      // happens to sit first in the list — that was the bug that made piano
+      // parts land on "Sub Bass" whenever Sub Bass was the first melodic
+      // track in the project.
       const existingMelodic = tracks.filter(t=>t.kind==='melodic');
+      const usedTrackIds = new Set();
       const channelToTrack = {};
-      let reuseIdx = 0;
       neededChannels.forEach(ch=>{
-        if(reuseIdx < existingMelodic.length){
-          channelToTrack[ch] = existingMelodic[reuseIdx];
-          reuseIdx++;
-        } else {
+        const desiredCat = categoryForProgram(programChanges[ch]);
+        let match = existingMelodic.find(t=>
+          !usedTrackIds.has(t.id) &&
+          INSTRUMENTS_BY_ID[t.instId] &&
+          INSTRUMENTS_BY_ID[t.instId].cat === desiredCat
+        );
+        if(!match){
           const inst = instrumentForProgram(programChanges[ch]);
-          const t = newTrackFromInstrument(inst);
-          tracks.push(t);
-          channelToTrack[ch] = t;
+          match = newTrackFromInstrument(inst);
+          tracks.push(match);
           addedCount++;
         }
+        usedTrackIds.add(match.id);
+        channelToTrack[ch] = match;
       });
 
       // 4) Resize every track's pattern to the new song length and clear it
