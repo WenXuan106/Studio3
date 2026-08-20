@@ -895,52 +895,58 @@
     const pool = getNoiseBufferPool();
     return pool[(Math.random()*pool.length)|0];
   }
-  function trackGainNode(vol, time){
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(vol, time);
-    g.connect(masterGain);
-    return g;
-  }
+  // (trackGainNode removed — folded into the merged envelope/volume gain above)
+
+  // When a render has a huge number of notes (e.g. a long imported MIDI song),
+  // building full-richness voices for every single one is what actually makes
+  // export slow — it's not a stall, it's tens of thousands of real oscillators/
+  // filters. This flag (set only during export, for only very large songs) trims
+  // per-note node count: fewer unison voices, no vibrato LFO. Never affects live
+  // playback or normal-sized patterns.
+  let synthPerfMode = false;
 
   // ---------- Generic drum engine ----------
+  // (Below: each case used to route through its own gain node "g" into masterGain
+  // *and* a separate per-hit envelope gain "eg" into "g" — two GainNodes doing one
+  // job. Scaling the envelope breakpoints by the volume directly and connecting
+  // straight to masterGain sounds identical but is one fewer node per drum hit.)
   function playDrumInstrument(time, inst, vol){
-    const g = trackGainNode(vol, time);
+    const v = Math.max(vol, 0.0001); // exponential ramps require a positive value
     switch(inst.engine){
       case 'tone': {
         const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
         osc.frequency.setValueAtTime(inst.freq, time);
         osc.frequency.exponentialRampToValueAtTime(Math.max(1, inst.freqEnd||inst.freq*0.6), time+inst.decay);
-        const eg = audioCtx.createGain();
-        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
-        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain(); eg.connect(masterGain);
+        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
+        osc.connect(eg); osc.start(time); osc.stop(time+inst.decay+0.02);
         break;
       }
       case 'noise': {
         const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
         const filt = audioCtx.createBiquadFilter(); filt.type = inst.filterType||'highpass';
         filt.frequency.value = inst.filterFreq||5000; filt.Q.value = inst.q||0.5;
-        const eg = audioCtx.createGain();
-        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
-        noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(time); noise.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain(); eg.connect(masterGain);
+        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
+        noise.connect(filt); filt.connect(eg); noise.start(time); noise.stop(time+inst.decay+0.02);
         break;
       }
       case 'tonenoise': {
         const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
         const filt = audioCtx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = inst.noiseFreq||1000;
-        const neg = audioCtx.createGain();
-        neg.gain.setValueAtTime(1, time); neg.gain.exponentialRampToValueAtTime(0.001, time+inst.noiseDecay);
-        noise.connect(filt); filt.connect(neg); neg.connect(g);
+        const neg = audioCtx.createGain(); neg.connect(masterGain);
+        neg.gain.setValueAtTime(v, time); neg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.noiseDecay);
+        noise.connect(filt); filt.connect(neg);
         const osc = audioCtx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = inst.toneFreq;
-        const oeg = audioCtx.createGain();
-        oeg.gain.setValueAtTime(0.6, time); oeg.gain.exponentialRampToValueAtTime(0.001, time+inst.toneDecay);
-        osc.connect(oeg); oeg.connect(g);
+        const oeg = audioCtx.createGain(); oeg.connect(masterGain);
+        oeg.gain.setValueAtTime(0.6*v, time); oeg.gain.exponentialRampToValueAtTime(0.001*v, time+inst.toneDecay);
+        osc.connect(oeg);
         noise.start(time); noise.stop(time+inst.noiseDecay+0.02); osc.start(time); osc.stop(time+inst.toneDecay+0.02);
         break;
       }
       case 'metallic': {
-        const eg = audioCtx.createGain();
-        eg.gain.setValueAtTime(1, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
-        eg.connect(g);
+        const eg = audioCtx.createGain(); eg.connect(masterGain);
+        eg.gain.setValueAtTime(v, time); eg.gain.exponentialRampToValueAtTime(v*0.001, time+inst.decay);
         (inst.freqs||[800]).forEach(f=>{
           const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.value = f;
           const og = audioCtx.createGain(); og.gain.value = inst.mix||0.3;
@@ -958,17 +964,17 @@
           const t = time + i*(inst.spacing||0.012);
           const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer();
           const filt = audioCtx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = inst.filterFreq||1200;
-          const eg = audioCtx.createGain();
-          eg.gain.setValueAtTime(0.8, t); eg.gain.exponentialRampToValueAtTime(0.001, t+inst.decay);
-          noise.connect(filt); filt.connect(eg); eg.connect(g); noise.start(t); noise.stop(t+inst.decay+0.02);
+          const eg = audioCtx.createGain(); eg.connect(masterGain);
+          eg.gain.setValueAtTime(0.8*v, t); eg.gain.exponentialRampToValueAtTime(0.001*v, t+inst.decay);
+          noise.connect(filt); filt.connect(eg); noise.start(t); noise.stop(t+inst.decay+0.02);
         }
         break;
       }
       case 'click': {
         const osc = audioCtx.createOscillator(); osc.type = inst.wave||'square'; osc.frequency.setValueAtTime(inst.freq, time);
-        const eg = audioCtx.createGain();
-        eg.gain.setValueAtTime(0.6, time); eg.gain.exponentialRampToValueAtTime(0.001, time+inst.decay);
-        osc.connect(eg); eg.connect(g); osc.start(time); osc.stop(time+inst.decay+0.02);
+        const eg = audioCtx.createGain(); eg.connect(masterGain);
+        eg.gain.setValueAtTime(0.6*v, time); eg.gain.exponentialRampToValueAtTime(0.001*v, time+inst.decay);
+        osc.connect(eg); osc.start(time); osc.stop(time+inst.decay+0.02);
         break;
       }
     }
@@ -977,25 +983,29 @@
   // ---------- Generic melodic engine ----------
   function playMelodicInstrument(time, freq, inst, gainMul){
     const vol = (inst.vol||0.5) * (gainMul!==undefined ? gainMul : 1);
-    const g = audioCtx.createGain(); g.gain.setValueAtTime(vol, time); g.connect(masterGain);
-    let dest = g;
+    const v = Math.max(vol, 0.0001); // exponential ramps require a positive value
+    // Same node-merging idea as the drum engine: fold the constant volume
+    // multiplier straight into the envelope breakpoints instead of a separate
+    // GainNode — identical sound, one fewer node per note.
+    let dest = masterGain;
     if(inst.filterType){
       const filt = audioCtx.createBiquadFilter();
       filt.type = inst.filterType; filt.frequency.value = inst.filterFreq||2000; filt.Q.value = inst.filterQ||1;
-      filt.connect(g); dest = filt;
+      filt.connect(masterGain); dest = filt;
     }
     const eg = audioCtx.createGain(); eg.connect(dest);
     let dur;
     if(inst.pluck){ dur = inst.decayTime || 0.5; }
     else { dur = (60/bpm) * (inst.durBeats || 1.0); }
-    eg.gain.setValueAtTime(0.0001, time);
-    eg.gain.linearRampToValueAtTime(1, time + (inst.attack||0.01));
-    eg.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    const unison = (inst.unison && inst.unison.length) ? inst.unison : [0];
+    eg.gain.setValueAtTime(0.0001*v, time);
+    eg.gain.linearRampToValueAtTime(v, time + (inst.attack||0.01));
+    eg.gain.exponentialRampToValueAtTime(0.001*v, time + dur);
+    let unison = (inst.unison && inst.unison.length) ? inst.unison : [0];
+    if(synthPerfMode && unison.length > 3) unison = unison.slice(0, 3); // trim doubled-up voices on huge renders
     unison.forEach(cents=>{
       const osc = audioCtx.createOscillator(); osc.type = inst.wave||'sine';
       osc.frequency.setValueAtTime(freq, time); osc.detune.setValueAtTime(cents, time);
-      if(inst.vibratoRate && inst.vibratoDepth){
+      if(inst.vibratoRate && inst.vibratoDepth && !synthPerfMode){
         const lfo = audioCtx.createOscillator(); lfo.frequency.value = inst.vibratoRate;
         const lfoGain = audioCtx.createGain(); lfoGain.gain.value = inst.vibratoDepth;
         lfo.connect(lfoGain); lfoGain.connect(osc.detune); lfo.start(time); lfo.stop(time+dur+0.05);
@@ -1702,9 +1712,29 @@
   async function exportAudio(){
     const hasNotes = tracks.some(t=> t.kind==='drum' ? t.pattern.some(x=>x) : t.pattern.some(x=>x!==null && x!==undefined));
     if(!hasNotes){ setStatus('Nothing to export — add some steps first.'); return; }
+
+    // Count actual triggers up front (cheap — just scanning arrays already in
+    // memory) so we can decide whether this render is big enough to need the
+    // faster/lighter synthesis path.
+    let triggerCount = 0;
+    tracks.forEach(t=>{
+      if(t.kind==='drum') t.pattern.forEach(v=>{ if(v) triggerCount++; });
+      else t.pattern.forEach(v=>{ if(v!==null && v!==undefined) triggerCount++; });
+    });
+    const PERF_THRESHOLD = 4000;
+    synthPerfMode = triggerCount > PERF_THRESHOLD;
+    // Oscillators/filters cost roughly proportional to sample rate — halving it
+    // roughly halves DSP work for a render this dense. 22.05kHz is still clean for
+    // a busy chiptune-style arrangement; it's the standard trade-off engines make
+    // for exactly this situation.
+    const sampleRate = synthPerfMode ? 22050 : 44100;
+
     const btn = document.getElementById('exportAudioBtn');
     const savedLabel = btn.textContent;
     btn.disabled = true; btn.textContent = 'Preparing…';
+    if(synthPerfMode){
+      setStatus('Large song (' + triggerCount + ' notes) — using a faster render (22.05kHz, simplified voices) to keep export time reasonable…');
+    }
     const startedAt = Date.now();
     // Temporarily point the shared audio engine at an offline context so the
     // existing playDrumInstrument/playMelodicInstrument code can render silently.
@@ -1713,7 +1743,6 @@
       const secondsPerStep = (60/bpm)/4;
       const tailSeconds = 3.0; // let long pads/decays ring out fully
       const duration = totalSteps*secondsPerStep + tailSeconds;
-      const sampleRate = 44100;
       const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.ceil(sampleRate*duration), sampleRate);
       audioCtx = offlineCtx;
       masterGain = offlineCtx.createGain();
@@ -1776,6 +1805,7 @@
       setStatus('Could not render audio: ' + (err && err.message ? err.message : err));
     } finally {
       audioCtx = savedAudioCtx; masterGain = savedMasterGain;
+      synthPerfMode = false;
       btn.disabled = false; btn.textContent = savedLabel;
     }
   }
