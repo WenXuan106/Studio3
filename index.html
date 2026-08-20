@@ -1705,7 +1705,18 @@
     const btn = document.getElementById('exportAudioBtn');
     const savedLabel = btn.textContent;
     btn.disabled = true; btn.textContent = 'Rendering…';
+    // Elapsed-time status instead of a fake percentage — the previous version used
+    // OfflineAudioContext suspend()/resume() checkpoints to fake a progress bar, but
+    // that scheme can stall permanently in some browsers once there are enough
+    // scheduled notes (a suspend point can fail to land exactly on a render quantum,
+    // so its resume() never fires and everything downstream waits forever). A plain
+    // await on startRendering() has no such failure mode.
+    const startedAt = Date.now();
     setStatus('Rendering audio…');
+    const tickInterval = setInterval(()=>{
+      const secs = Math.round((Date.now()-startedAt)/1000);
+      setStatus('Rendering audio… ' + secs + 's elapsed');
+    }, 1000);
     // Temporarily point the shared audio engine at an offline context so the
     // existing playDrumInstrument/playMelodicInstrument code can render silently.
     const savedAudioCtx = audioCtx, savedMasterGain = masterGain;
@@ -1737,34 +1748,19 @@
         });
       }
 
-      // Report progress: schedule suspend/resume checkpoints through the render
-      // so the button and status can show a live percentage as it renders.
-      const showProgress = (pct)=>{
-        setStatus('Rendering audio… ' + pct + '%');
-        btn.textContent = 'Rendering ' + pct + '%…';
-      };
-      showProgress(0);
-      const numCheckpoints = 20;
-      for(let c=1; c<numCheckpoints; c++){
-        const checkTime = duration * c / numCheckpoints;
-        offlineCtx.suspend(checkTime).then(()=>{
-          showProgress(Math.round(c/numCheckpoints*100));
-          offlineCtx.resume();
-        });
-      }
-
       const rendered = await offlineCtx.startRendering();
-      showProgress(100);
       const blob = audioBufferToWavBlob(rendered);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'deck16-pattern.wav';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setStatus('Audio file exported.');
+      const totalSecs = Math.round((Date.now()-startedAt)/1000);
+      setStatus('Audio file exported (took ' + totalSecs + 's).');
     } catch(err){
-      setStatus('Could not render audio.');
+      setStatus('Could not render audio: ' + (err && err.message ? err.message : err));
     } finally {
+      clearInterval(tickInterval);
       audioCtx = savedAudioCtx; masterGain = savedMasterGain;
       btn.disabled = false; btn.textContent = savedLabel;
     }
