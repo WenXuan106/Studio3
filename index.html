@@ -871,12 +871,29 @@
     }
     if(audioCtx.state==='suspended') audioCtx.resume();
   }
-  function noiseBuffer(){
+  // A fresh random noise buffer used to be generated on every single hit, which
+  // is wasteful — for songs with thousands of hat/snare/clap hits (long imported
+  // MIDI files especially) that added up to a huge amount of redundant work and
+  // made rendering/exporting painfully slow. Instead, build a small reusable pool
+  // once per AudioContext and pick from it — keeps some natural variation between
+  // hits without resynthesizing noise every time.
+  let noiseBufferPool = null, noiseBufferPoolCtx = null;
+  function getNoiseBufferPool(){
+    if(noiseBufferPool && noiseBufferPoolCtx === audioCtx) return noiseBufferPool;
     const bufferSize = audioCtx.sampleRate * 0.6;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
-    return buffer;
+    const pool = [];
+    for(let p=0;p<4;p++){
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+      pool.push(buffer);
+    }
+    noiseBufferPool = pool; noiseBufferPoolCtx = audioCtx;
+    return pool;
+  }
+  function noiseBuffer(){
+    const pool = getNoiseBufferPool();
+    return pool[(Math.random()*pool.length)|0];
   }
   function trackGainNode(vol, time){
     const g = audioCtx.createGain();
