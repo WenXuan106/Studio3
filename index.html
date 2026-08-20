@@ -281,7 +281,11 @@
 
     <div class="seq-scroll">
       <div class="seq-header-row">
-        <div class="seq-header-fixed" style="width:266px;"></div>
+        <div class="seq-header-fixed" style="width:266px; display:flex; align-items:center; gap:6px;">
+          <button class="mini-btn" id="viewPrevBtn" title="Previous 30 bars">‹</button>
+          <span class="mono" id="viewRangeLabel" style="font-size:10.5px; color:var(--text-dim); white-space:nowrap;">1–30</span>
+          <button class="mini-btn" id="viewNextBtn" title="Next 30 bars">›</button>
+        </div>
         <div class="seq-header-grid" id="seqHeader"></div>
       </div>
       <div id="trackList"></div>
@@ -345,6 +349,34 @@
   const STEP_PER_BAR = 16;
   let bars = 4;
   let totalSteps = bars * STEP_PER_BAR;
+
+  // The full song (tracks[*].pattern) can be however many bars the user's
+  // browser can hold — no cap. But rendering every bar as real DOM elements
+  // at once is what actually chokes the page on long songs. So instead we
+  // only ever build 30 bars' worth of cells at a time ("the window") and
+  // page through the song, while the underlying pattern data for the WHOLE
+  // song stays intact underneath — export always uses the full thing.
+  const VIEW_BARS = 30;
+  const VIEW_STEPS = VIEW_BARS * STEP_PER_BAR;
+  let viewStart = 0; // in steps, shared by the main grid and the piano roll
+  function clampViewStart(v){
+    const maxStart = Math.max(0, totalSteps - VIEW_STEPS);
+    return Math.min(Math.max(0, v), maxStart);
+  }
+  function currentWindow(){
+    const start = clampViewStart(viewStart);
+    const end = Math.min(totalSteps, start + VIEW_STEPS);
+    return { start, end };
+  }
+  function setViewStart(v){
+    viewStart = clampViewStart(v);
+    buildSeqHeader();
+    buildTrackList();
+    if(selectedTrackId!==null){
+      const t = tracks.find(tr=>tr.id===selectedTrackId);
+      if(t) buildRollEditor(t);
+    }
+  }
 
   // ============================================================
   // Instrument library — all synthesized (no external samples)
@@ -1043,15 +1075,15 @@
   }
   let uiStep = 0;
   function scheduleStep(step, time){
+    const anySolo = tracks.some(t=>t.solo);
     tracks.forEach(track=>{
+      if(track.mute) return;
+      if(anySolo && !track.solo) return;
       const val = track.pattern[step];
       if(track.kind === 'drum'){
         if(val) triggerTrackAudio(track, time);
       } else if(track.kind === 'melodic'){
         if(val !== null && val !== undefined){
-          if(track.mute) return;
-          const anySolo = tracks.some(t=>t.solo);
-          if(anySolo && !track.solo) return;
           const inst = INSTRUMENTS_BY_ID[track.instId];
           if(inst) playMelodicInstrument(time, noteFreq(NOTE_RANGE[val]), inst, track.vol);
         }
@@ -1060,10 +1092,29 @@
     const delay = (time - audioCtx.currentTime)*1000;
     setTimeout(()=>{ uiStep = step; updatePlayhead(); }, Math.max(0,delay));
   }
+  // Only touch the current step's cells rather than rescanning every cell on
+  // the page (that scales with total song size and is what bogs down long
+  // songs). If playback moves past the currently-visible 30-bar window,
+  // page the window forward automatically so you can watch it play.
+  let lastUiStep = -1;
   function updatePlayhead(){
-    document.querySelectorAll('.step, .cell').forEach(el=>{
-      el.classList.toggle('playhead', parseInt(el.dataset.step,10)===uiStep);
-    });
+    if(uiStep < viewStart || uiStep >= viewStart + VIEW_STEPS){
+      viewStart = clampViewStart(Math.floor(uiStep/VIEW_STEPS)*VIEW_STEPS);
+      buildSeqHeader(); buildTrackList();
+      if(selectedTrackId!==null){
+        const t = tracks.find(tr=>tr.id===selectedTrackId);
+        if(t) buildRollEditor(t);
+      }
+      lastUiStep = -1; // DOM was rebuilt, force a fresh highlight below
+    }
+    if(lastUiStep === uiStep) return;
+    if(lastUiStep >= 0){
+      document.querySelectorAll(`.step[data-step="${lastUiStep}"], .cell[data-step="${lastUiStep}"]`)
+        .forEach(el=>el.classList.remove('playhead'));
+    }
+    document.querySelectorAll(`.step[data-step="${uiStep}"], .cell[data-step="${uiStep}"]`)
+      .forEach(el=>el.classList.add('playhead'));
+    lastUiStep = uiStep;
     document.querySelectorAll('#stepIndicator span').forEach((el,i)=>{
       el.classList.toggle('on', i===uiStep);
     });
@@ -1081,6 +1132,7 @@
     document.getElementById('playBtn').classList.remove('playing');
     document.querySelectorAll('.playhead').forEach(el=>el.classList.remove('playhead'));
     document.querySelectorAll('#stepIndicator span').forEach(el=>el.classList.remove('on'));
+    lastUiStep = -1;
   }
 
   // ============================================================
@@ -1093,9 +1145,15 @@
   }
   function buildSeqHeader(){
     document.getElementById('barsInput').value = bars;
+    const { start, end } = currentWindow();
+    const startBar = Math.floor(start/STEP_PER_BAR)+1;
+    const endBar = Math.ceil(end/STEP_PER_BAR);
+    document.getElementById('viewRangeLabel').textContent = startBar + '–' + endBar + ' / ' + bars;
+    document.getElementById('viewPrevBtn').disabled = start<=0;
+    document.getElementById('viewNextBtn').disabled = end>=totalSteps;
     const el = document.getElementById('seqHeader');
     el.innerHTML = '';
-    for(let i=0;i<totalSteps;i++){
+    for(let i=start;i<end;i++){
       const d = document.createElement('div');
       d.className = 'num' + (i%4===0 ? ' beat':'') + (i%STEP_PER_BAR===0 ? ' barstart':'');
       d.textContent = i%STEP_PER_BAR===0 ? (Math.floor(i/STEP_PER_BAR)+1) : (i%4===0 ? '·':'');
@@ -1103,6 +1161,8 @@
     }
     buildStepIndicator();
   }
+  document.getElementById('viewPrevBtn').onclick = ()=> setViewStart(viewStart - VIEW_STEPS);
+  document.getElementById('viewNextBtn').onclick = ()=> setViewStart(viewStart + VIEW_STEPS);
 
   function newTrackFromInstrument(inst){
     return {
@@ -1164,7 +1224,8 @@
       row.appendChild(fixed);
 
       const grid = document.createElement('div'); grid.className='track-grid';
-      for(let i=0;i<totalSteps;i++){
+      const { start, end } = currentWindow();
+      for(let i=start;i<end;i++){
         const step = document.createElement('div');
         const isMelodic = track.kind==='melodic';
         step.className = 'step' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'') + (isMelodic?' melodic-block':'');
@@ -1244,12 +1305,13 @@
     const wrap = document.getElementById('pianoRoll');
     wrap.innerHTML = '';
     const inner = document.createElement('div'); inner.className = 'roll-inner';
+    const { start, end } = currentWindow();
 
     // Sticky ruler: bar numbers along the top, like a timeline
     const ruler = document.createElement('div'); ruler.className = 'roll-ruler';
     const spacer = document.createElement('div'); spacer.className = 'roll-ruler-spacer';
     ruler.appendChild(spacer);
-    for(let i=0;i<totalSteps;i++){
+    for(let i=start;i<end;i++){
       const rc = document.createElement('div');
       const isBarStart = i % STEP_PER_BAR === 0;
       rc.className = 'roll-ruler-cell' + (isBarStart ? ' barstart' : '');
@@ -1269,7 +1331,7 @@
       key.textContent = isC ? note : (isBlack ? '' : note.replace(/[0-9]+$/,''));
       row.appendChild(key);
 
-      for(let i=0;i<totalSteps;i++){
+      for(let i=start;i<end;i++){
         const cell = document.createElement('div');
         cell.className = 'cell' + (i%4===2?' beat3':'') + (i%STEP_PER_BAR===0?' barstart':'');
         cell.dataset.step = i; cell.dataset.note = ni;
